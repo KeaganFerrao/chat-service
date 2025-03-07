@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket client</title>
+</head>
+
+<body>
+    Welcome to the socket client Hairdao
+    <input id="message-box" type="text">
+    <button id="message-button">Click to send message</button>
+
+    <button id="reach-user">Reach user</button>
+    <button id="list-user">List Users</button>
+    <button id="message-list">Message List</button>
+    <button id="list-channels">List channels</button>
+    <button id="download">Download attachment</button>
+    <button id="ack-message">Ack message</button>
+
+    <button id="notification-list">Notification List</button>
+    <button id="ack-notification">Ack Notification</button>
+
+    <button id="notification-unread-count">Notification unread count</button>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+        const token = 'DOCTOR_SESSION_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJzYW1AeW9wbWFpbC5jb20iLCJjbGFpbSI6ImRvY3RvciIsInNlc3Npb25JZCI6IjU0MjgxYjMzMjBhNTY5YTc2NTA1MDA3NGU3ZjY0ZGZlNTU1ZTIyODYiLCJpYXQiOjE3Mzc3MDg5NDAsImV4cCI6MTczNzc5NTM0MH0.BfTx_LD5z45zE8z2twEIbiEs9aF7TwCtlkwgE50VmnE; Path=/; Secure; HttpOnly; Expires=Thu, 25 Feb 2025 12:26:47 GMT;'
+        document.cookie = token;
+
+        var socket = io("http://localhost:3006", {
+            withCredentials: true,
+            query: {
+                type: 'doctor'
+            }
+        });
+
+        const channelId = 'c314e4a7-aa1f-4f09-9937-71e5962ea88f';
+        const userToReach = 2;
+
+        socket.on("connect", () => {
+            console.log("Connected to server");
+        });
+
+        socket.on("disconnect", () => {
+            console.log("Disconnected from server");
+        });
+
+        socket.on("message:new", (data) => {
+            console.log("Message received")
+            console.log(data);
+        });
+
+        socket.on("notification:new", (data) => {
+            console.log("Notification received")
+            console.log(data);
+        });
+
+        document.getElementById("message-button").addEventListener("click", (e) => {
+            let message = document.getElementById("message-box").value;
+            socket.emit("message:send", {
+                channelId,
+                content: message,
+                attachments: ['file1new', 'file2new']
+            }, (data) => {
+                console.log("Message  sent")
+                console.log(data);
+            });
+        });
+
+        document.getElementById("reach-user").addEventListener("click", () => {
+            socket.emit("user:reach", {
+                userId: userToReach
+            }, (data) => {
+                console.log("Reached User")
+                console.log(data);
+            });
+        });
+
+        document.getElementById("list-channels").addEventListener("click", () => {
+            socket.emit("channel:list", {
+                page: 1,
+                size: 10
+            }, (data) => {
+                console.log("List of channels")
+                console.log(data);
+            });
+        });
+
+        document.getElementById("message-list").addEventListener("click", () => {
+            socket.emit("message:list", {
+                channelId,
+                page: 1,
+                size: 10
+            }, (data) => {
+                console.log("List of messages")
+                console.log(data);
+            });
+        });
+
+        document.getElementById("ack-message").addEventListener("click", () => {
+            socket.emit("message:ack", {
+                messageId: 20,
+                channelId,
+            }, (data) => {
+                console.log("Message ack")
+                console.log(data);
+            });
+        });
+
+        document.getElementById("list-user").addEventListener("click", () => {
+            socket.emit("user:list", {
+                page: 1,
+                size: 10
+            }, (data) => {
+                console.log("List of users")
+                console.log(data);
+            });
+        });
+
+        document.getElementById("download").addEventListener("click", () => {
+            socket.emit("message:attachment:download", {
+                attachmentId: '65d8c2ba-829b-49ff-9b6f-bf24b19b9ddb',
+                channelId
+            }, (data) => {
+                console.log("Download attachment")
+                console.log(data);
+            });
+        });
+
+        document.getElementById("notification-list").addEventListener("click", () => {
+            socket.emit("notification:list", {
+                page: 1,
+                size: 10
+            }, (data) => {
+                console.log("List of notifications")
+                console.log(data);
+            });
+        });
+
+        document.getElementById("ack-notification").addEventListener("click", () => {
+            socket.emit("notification:ack", {
+                notificationId: 2
+            }, (data) => {
+                console.log("Notification ack")
+                console.log(data);
+            });
+        });
+
+        document.getElementById("notification-unread-count").addEventListener("click", () => {
+            socket.emit("notification:unreadcount", {}, (data) => {
+                console.log("Notification unread count")
+                console.log(data);
+            });
+        });
+    </script>
+
+</body>
+
+</html>
