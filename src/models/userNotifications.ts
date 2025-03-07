@@ -1,10 +1,10 @@
-import { BIGINT, DataTypes, literal, Model, Optional } from 'sequelize';
+import { BIGINT, DataTypes, DATE, literal, Model, Optional } from 'sequelize';
 import sequelize from '../setup/database';
 
 export interface UserNotificationAttributes {
     id: string;
     baseUserId: number;
-    notificationOffset?: bigint;
+    notificationOffset?: Date;
 }
 
 interface UserNotificationCreationAttributes extends Optional<UserNotificationAttributes, 'id'> { }
@@ -35,9 +35,8 @@ const userNotification = sequelize.define<UserNotificationInstance>(
             }
         },
         notificationOffset: {
-            type: BIGINT,
+            type: DATE,
             allowNull: false,
-            defaultValue: 0
         }
     },
     {

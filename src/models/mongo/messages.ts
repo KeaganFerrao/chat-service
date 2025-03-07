@@ -1,10 +1,9 @@
 import mongoose from 'mongoose';
-import { v4 as uuidv4 } from 'uuid'; // UUID generator
 
 const messageSchema = new mongoose.Schema({
     id: {
-        type: String, // Store UUID as a string
-        default: uuidv4, // Generate UUID on creation
+        type: mongoose.Types.UUID,
+        default: () => new mongoose.Types.UUID(), // Using UUID instead of MongoDB's ObjectId
         unique: true
     },
     fromBaseUserId: {
@@ -12,7 +11,7 @@ const messageSchema = new mongoose.Schema({
         required: true
     },
     channelId: {
-        type: String, // UUID stored as string
+        type: mongoose.Types.UUID,
         required: true
     },
     content: {

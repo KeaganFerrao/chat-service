@@ -14,7 +14,7 @@ interface MessageService {
     listUsers(userId: number, limit: number, offset: number, search?: string): Promise<{ rows: BaseUserAttributes[]; count: number }>;
     listUserChannels(userId: number, limit: number, offset: number, search?: string): Promise<{ rows: any[]; count: number }>;
     createMessage(fromBaseUserId: number, channelId: string, content: string | null, attachments: { fileName: string; id: string }[] | null, transaction: Transaction): Promise<MessageAttributes>;
-    updateMessageOffset(userId: number, channelId: string, messageId: bigint, transaction: Transaction): Promise<void>;
+    updateMessageOffset(userId: number, channelId: string, transaction: Transaction): Promise<void>;
     createAttachment(baseUserId: number, channelId: string, fileNames: string[], transaction: Transaction): Promise<AttachmentsCreationAttributes[]>;
     getAttachment(attachmentId: string, channelId: string): Promise<AttachmentsCreationAttributes | null>;
     getUsersInChannel(channelId: string, exceptionUserId: number, transaction: Transaction): Promise<userChannelAttributes[]>;

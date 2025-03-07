@@ -1,4 +1,4 @@
-import { BIGINT, INTEGER, QueryInterface, QueryInterfaceCreateTableOptions, STRING, UUID, literal } from 'sequelize';
+import { BIGINT, DATE, INTEGER, QueryInterface, QueryInterfaceCreateTableOptions, STRING, UUID, literal } from 'sequelize';
 
 module.exports = {
     up: async (queryInterface: QueryInterface): Promise<void> => {
@@ -40,9 +40,8 @@ module.exports = {
                 }
             },
             messageOffset: {
-                type: BIGINT,
-                allowNull: false,
-                defaultValue: 0
+                type: DATE,
+                allowNull: false
             }
         }, {
             tableName: 'userChannels',

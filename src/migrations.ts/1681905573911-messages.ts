@@ -1,13 +1,13 @@
-import { BIGINT, DATE, INTEGER, JSONB, QueryInterface, QueryInterfaceCreateTableOptions, TEXT, UUID } from 'sequelize';
+import { BIGINT, DATE, INTEGER, JSONB, literal, QueryInterface, QueryInterfaceCreateTableOptions, TEXT, UUID } from 'sequelize';
 
 module.exports = {
     up: async (queryInterface: QueryInterface): Promise<void> => {
         await queryInterface.createTable('messages', {
             id: {
-                type: BIGINT,
-                autoIncrement: true,
+                type: UUID,
                 allowNull: false,
                 primaryKey: true,
+                defaultValue: literal('gen_random_uuid()')
             },
             fromBaseUserId: {
                 type: INTEGER,

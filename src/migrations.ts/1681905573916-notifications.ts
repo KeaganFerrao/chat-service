@@ -1,13 +1,13 @@
-import { BIGINT, BOOLEAN, DATE, ENUM, INTEGER, QueryInterface, QueryInterfaceCreateTableOptions, STRING, TEXT } from 'sequelize';
+import { BIGINT, BOOLEAN, DATE, ENUM, INTEGER, literal, QueryInterface, QueryInterfaceCreateTableOptions, STRING, TEXT, UUID } from 'sequelize';
 
 module.exports = {
     up: async (queryInterface: QueryInterface): Promise<void> => {
         await queryInterface.createTable('notifications', {
             id: {
-                type: BIGINT,
-                autoIncrement: true,
+                type: UUID,
                 allowNull: false,
                 primaryKey: true,
+                defaultValue: literal('gen_random_uuid()')
             },
             baseUserId: {
                 type: INTEGER,

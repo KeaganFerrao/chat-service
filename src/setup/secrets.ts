@@ -25,4 +25,5 @@ export const {
     COOKIE_SECURE,
     CSRF_CHECK,
     LOG_LEVEL,
+    MONGO_URI
 } = process.env;

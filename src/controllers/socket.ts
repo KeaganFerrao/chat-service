@@ -227,7 +227,7 @@ const SendMessage = (socket: Socket) => async (payload: { channelId: string, con
         logger.debug(`Message attachments: ${JSON.stringify(formattedAttachments)}`);
 
         const message = await createMessage(fromUserId, channelId, content, formattedAttachments, transaction);
-        await updateMessageOffset(fromUserId, channelId, message.id, transaction);
+        await updateMessageOffset(fromUserId, channelId, transaction);
 
         logger.debug(`Getting users in channel ${channelId}`);
         const usersInChannel = await getUsersInChannel(channelId, fromUserId, transaction);
@@ -385,7 +385,7 @@ const AckMessage = (socket: Socket) => async (payload: { channelId: string, mess
         }
 
         logger.debug(`Acknowledging message ${messageId} in channel ${channelId} for user ${baseUserId}`);
-        await ackMessage(baseUserId, channelId, messageId);
+        await ackMessage(baseUserId, channelId);
 
         return callback({
             success: true,
@@ -546,7 +546,7 @@ const AckNotification = (socket: Socket) => async (payload: { notificationId: nu
         }
 
         logger.debug(`Acknowledging notification ${notificationId} for user ${baseUserId}`);
-        await ackNotification(baseUserId, notificationId);
+        await ackNotification(baseUserId);
 
         return callback({
             success: true,

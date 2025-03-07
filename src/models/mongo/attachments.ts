@@ -3,8 +3,8 @@ import mongoose from 'mongoose';
 // Define the schema
 const attachmentsSchema = new mongoose.Schema({
     id: {
-        type: String,
-        default: () => new mongoose.Types.ObjectId().toString(), // Mongoose uses ObjectId by default
+        type: mongoose.Types.UUID,
+        default: () => new mongoose.Types.UUID(), // Using UUID instead of MongoDB's ObjectId
         unique: true
     },
     baseUserId: {

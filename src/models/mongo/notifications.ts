@@ -2,12 +2,12 @@ import mongoose from 'mongoose';
 
 const notificationSchema = new mongoose.Schema({
     id: {
-        type: Number, // BIGINT equivalent in MongoDB
-        unique: true,
-        required: true
+        type: mongoose.Types.UUID,
+        default: () => new mongoose.Types.UUID(), // Using UUID instead of MongoDB's ObjectId
+        unique: true
     },
     baseUserId: {
-        type: String,
+        type: mongoose.Types.UUID,
         default: null
     },
     content: {

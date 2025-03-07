@@ -80,7 +80,7 @@ export class SequelizeMessageService implements MessageService {
         SELECT COUNT(*)
         FROM "messages"
         WHERE "messages"."channelId" = "userChannels"."channelId"
-        AND "messages"."id" > "userChannels"."messageOffset"
+        AND "messages"."sentOn" > "userChannels"."messageOffset"
     `;
 
         const lastMessageSubquery = `
@@ -154,9 +154,9 @@ export class SequelizeMessageService implements MessageService {
         return data;
     }
 
-    updateMessageOffset = async (userId: number, channelId: string, messageId: bigint, transaction: Transaction) => {
+    updateMessageOffset = async (userId: number, channelId: string, transaction: Transaction) => {
         await userChannel.update({
-            messageOffset: messageId
+            messageOffset: new Date()
         }, {
             where: {
                 baseUserId: userId,
@@ -196,7 +196,7 @@ export class SequelizeMessageService implements MessageService {
         SELECT COUNT(*)
         FROM "messages"
         WHERE "messages"."channelId" = "userChannels"."channelId"
-        AND "messages"."id" > "userChannels"."messageOffset"
+        AND "messages"."sentOn" > "userChannels"."messageOffset"
     `;
 
         const users = await userChannel.findAll({
@@ -234,28 +234,28 @@ export class SequelizeMessageService implements MessageService {
         return unreadMessageCount
     }
 
-    ackMessage = async (userId: number, channelId: string, messageId: number) => {
+    ackMessage = async (userId: number, channelId: string) => {
         await userChannel.update({
-            messageOffset: BigInt(messageId)
+            messageOffset: new Date()
         }, {
             where: {
                 baseUserId: userId,
                 channelId,
                 messageOffset: {
-                    [Op.lt]: messageId
+                    [Op.lt]: new Date()
                 }
             }
         })
     }
 
-    ackNotification = async (userId: number, notificationId: number) => {
+    ackNotification = async (userId: number) => {
         await userNotification.update({
-            notificationOffset: BigInt(notificationId)
+            notificationOffset: new Date()
         }, {
             where: {
                 baseUserId: userId,
                 notificationOffset: {
-                    [Op.lt]: notificationId
+                    [Op.lt]: new Date()
                 }
             }
         })

@@ -1,12 +1,12 @@
-import { BIGINT, DataTypes, literal, Model, Optional } from 'sequelize';
+import { DataTypes, DATE, literal, Model, Optional } from 'sequelize';
 import sequelize from '../setup/database';
 
 export interface userChannelAttributes {
-    id: bigint;
+    id: string;
     baseUserId: number;
     toBaseUserId?: number;
     channelId: string;
-    messageOffset?: bigint;
+    messageOffset?: Date;
 }
 
 export interface userChannelCreationAttributes extends Optional<userChannelAttributes, 'id'> { }
@@ -57,9 +57,9 @@ const userChannel = sequelize.define<userChannelInstance>(
             }
         },
         messageOffset: {
-            type: BIGINT,
+            type: DATE,
             allowNull: false,
-            defaultValue: 0
+            defaultValue: new Date()
         }
     },
     {

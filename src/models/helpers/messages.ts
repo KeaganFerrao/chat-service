@@ -78,7 +78,7 @@ const listUserChannels = async (userId: number, limit: number, offset: number, s
         SELECT COUNT(*)
         FROM "messages"
         WHERE "messages"."channelId" = "userChannels"."channelId"
-        AND "messages"."id" > "userChannels"."messageOffset"
+        AND "messages"."sentOn" > "userChannels"."messageOffset"
     `;
 
     const lastMessageSubquery = `
@@ -152,9 +152,9 @@ const createMessage = async (fromBaseUserId: number, channelId: string, content:
     return data;
 }
 
-const updateMessageOffset = async (userId: number, channelId: string, messageId: bigint, transaction: Transaction) => {
+const updateMessageOffset = async (userId: number, channelId: string, transaction: Transaction) => {
     await userChannel.update({
-        messageOffset: messageId
+        messageOffset: new Date()
     }, {
         where: {
             baseUserId: userId,
@@ -194,7 +194,7 @@ const getUsersInChannel = async (channelId: string, exceptionUserId: number, tra
         SELECT COUNT(*)
         FROM "messages"
         WHERE "messages"."channelId" = "userChannels"."channelId"
-        AND "messages"."id" > "userChannels"."messageOffset"
+        AND "messages"."sentOn" > "userChannels"."messageOffset"
     `;
 
     const users = await userChannel.findAll({
@@ -223,7 +223,7 @@ const getUnreadMessageCount = async (userId: number, channelId: string) => {
     const unreadMessageCount = await message.count({
         where: {
             channelId,
-            id: {
+            sentOn: {
                 [Op.gt]: data?.messageOffset
             }
         }
@@ -232,28 +232,28 @@ const getUnreadMessageCount = async (userId: number, channelId: string) => {
     return unreadMessageCount
 }
 
-const ackMessage = async (userId: number, channelId: string, messageId: number) => {
+const ackMessage = async (userId: number, channelId: string) => {
     await userChannel.update({
-        messageOffset: BigInt(messageId)
+        messageOffset: new Date()
     }, {
         where: {
             baseUserId: userId,
             channelId,
             messageOffset: {
-                [Op.lt]: messageId
+                [Op.lt]: new Date()
             }
         }
     })
 }
 
-const ackNotification = async (userId: number, notificationId: number) => {
+const ackNotification = async (userId: number) => {
     await userNotification.update({
-        notificationOffset: BigInt(notificationId)
+        notificationOffset: new Date()
     }, {
         where: {
             baseUserId: userId,
             notificationOffset: {
-                [Op.lt]: notificationId
+                [Op.lt]: new Date()
             }
         }
     })

@@ -1,11 +1,11 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { DataTypes, literal, Model, Optional } from 'sequelize';
 import sequelize from '../setup/database';
 
 export interface MessageAttributes {
-    id: bigint;
+    id: string;
     fromBaseUserId: number;
     channelId: string;
-    content?: string | null; 
+    content?: string | null;
     attachments?: string;
     sentOn: Date;
 }
@@ -20,10 +20,10 @@ const message = sequelize.define<MessageInstance>(
     'messages',
     {
         id: {
-            type: DataTypes.BIGINT,
+            type: DataTypes.UUID,
             allowNull: false,
-            autoIncrement: true,
             primaryKey: true,
+            defaultValue: literal('gen_random_uuid()')
         },
         fromBaseUserId: {
             type: DataTypes.INTEGER,

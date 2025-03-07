@@ -1,11 +1,10 @@
 import mongoose from 'mongoose';
-import { v4 as uuidv4 } from 'uuid';
 
 // Define the schema
 const channelSchema = new mongoose.Schema({
     id: {
-        type: String,
-        default: uuidv4,
+        type: mongoose.Types.UUID,
+        default: () => new mongoose.Types.UUID(), // Using UUID instead of MongoDB's ObjectId
         unique: true
     },
     name: {
