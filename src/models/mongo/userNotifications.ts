@@ -2,11 +2,11 @@ import mongoose from 'mongoose';
 
 const userNotificationSchema = new mongoose.Schema({
     id: {
-        type: mongoose.Types.UUID,
-        default: () => new mongoose.Types.UUID() // Using UUID instead of MongoDB's default ObjectId
+        type: String,
+        default: () => new mongoose.Types.UUID().toString() // Using UUID instead of MongoDB's default ObjectId
     },
     baseUserId: {
-        type: mongoose.Types.UUID,
+        type: String,
         ref: 'BaseUser',
         required: true
     },

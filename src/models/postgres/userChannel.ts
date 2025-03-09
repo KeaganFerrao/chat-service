@@ -1,12 +1,13 @@
 import { DataTypes, DATE, literal, Model, Optional } from 'sequelize';
-import sequelize from '../setup/database';
+import sequelize from '../../setup/database';
 
 export interface userChannelAttributes {
     id: string;
-    baseUserId: number;
-    toBaseUserId?: number;
+    baseUserId: string;
+    toBaseUserId?: string;
     channelId: string;
     messageOffset?: Date;
+    unreadMessageCount?: number;
 }
 
 export interface userChannelCreationAttributes extends Optional<userChannelAttributes, 'id'> { }
@@ -27,7 +28,7 @@ const userChannel = sequelize.define<userChannelInstance>(
             defaultValue: literal('gen_random_uuid()')
         },
         baseUserId: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.UUID,
             allowNull: false,
             references: {
                 model: {
@@ -37,7 +38,7 @@ const userChannel = sequelize.define<userChannelInstance>(
             }
         },
         toBaseUserId: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.UUID,
             allowNull: true,
             references: {
                 model: {

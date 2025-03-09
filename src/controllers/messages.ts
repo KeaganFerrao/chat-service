@@ -1,4 +1,4 @@
-import { updateAttachmentUploadFailure, updateAttachmentUploadSuccess } from "@models/helpers/messages";
+import { updateAttachmentUploadFailure, updateAttachmentUploadSuccess } from "@models/postgres/helpers/messages";
 import logger from "@setup/logger";
 import { ProtectedPayload } from "@type/utility";
 import { RequestWithPayload } from "@type/utility"

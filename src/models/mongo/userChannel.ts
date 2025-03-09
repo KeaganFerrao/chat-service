@@ -2,22 +2,22 @@ import mongoose from 'mongoose';
 
 const userChannelSchema = new mongoose.Schema({
     id: {
-        type: mongoose.Types.UUID,
-        default: () => new mongoose.Types.UUID(), // Using UUID instead of MongoDB's ObjectId
+        type: String,
+        default: () => new mongoose.Types.UUID().toString(), // Using UUID instead of MongoDB's ObjectId
         unique: true
     },
     baseUserId: {
-        type: mongoose.Types.UUID,
+        type: String,
         ref: 'BaseUser', // Reference to BaseUser collection
         required: true
     },
     toBaseUserId: {
-        type: mongoose.Types.UUID,
+        type: String,
         ref: 'BaseUser',
         default: null
     },
     channelId: {
-        type: mongoose.Types.UUID,
+        type: String,
         ref: 'Channel', // Reference to Channel collection
         required: true
     },

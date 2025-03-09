@@ -1,9 +1,9 @@
 import { BIGINT, DataTypes, DATE, literal, Model, Optional } from 'sequelize';
-import sequelize from '../setup/database';
+import sequelize from '../../setup/database';
 
 export interface UserNotificationAttributes {
     id: string;
-    baseUserId: number;
+    baseUserId: string;
     notificationOffset?: Date;
 }
 
@@ -25,7 +25,7 @@ const userNotification = sequelize.define<UserNotificationInstance>(
             defaultValue: literal('gen_random_uuid()')
         },
         baseUserId: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.UUID,
             allowNull: false,
             references: {
                 model: {

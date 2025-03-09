@@ -1,11 +1,28 @@
 import { Server as httpServer } from "http";
 import { Server } from "socket.io";
-import { FRONTEND_URL } from "./secrets";
+import { DB_TYPE, FRONTEND_URL } from "./secrets";
 import logger from "./logger";
 import { JwtPayload } from "jsonwebtoken";
 import { decodeToken } from "@utility/auth";
-import { AckMessage, AckNotification, DownloadAttachment, GetNotificationUnreadCount, ListChannels, ListMessages, ListNotifications, ListUsers, ReachUser, SendMessage } from "@controllers/socket";
-import { getBaseUser } from "@models/helpers/messages";
+import { getBaseUser } from "@models/postgres/helpers/messages";
+import { SocketController } from "@controllers/socket";
+import { MessageService, TransactionManager } from "../interfaces/messages";
+import { MongoMessageService } from "../services/mongoMessages";
+import { SequelizeMessageService } from "../services/sequelizeMessages";
+import { MongoTransactionManager } from "@utility/mongoTransactionManager";
+import { SequelizeTransactionManager } from "@utility/sequelizeTransactionManager";
+
+let messageService: MessageService;
+let transactionManager: TransactionManager;
+if (DB_TYPE == 'mongo') {
+    messageService = new MongoMessageService();
+    transactionManager = new MongoTransactionManager();
+} else {
+    messageService = new SequelizeMessageService();
+    transactionManager = new SequelizeTransactionManager();
+}
+
+const socketController = new SocketController(messageService, transactionManager);
 
 const setUpSocket = (server: httpServer) => {
     const io = new Server(server, {
@@ -69,18 +86,18 @@ const setUpSocket = (server: httpServer) => {
             socket.join(`user:${payload.baseUserId}`);
             socket.join(`role:${payload.type}`);
 
-            socket.on('message:send', SendMessage(socket));
-            socket.on('message:list', ListMessages(socket));
-            socket.on('message:ack', AckMessage(socket));
-            socket.on('message:attachment:download', DownloadAttachment(socket));
+            socket.on('message:send', socketController.SendMessage(socket));
+            socket.on('message:list', socketController.ListMessages(socket));
+            socket.on('message:ack', socketController.AckMessage(socket));
+            socket.on('message:attachment:download', socketController.DownloadAttachment(socket));
 
-            socket.on('user:list', ListUsers(socket));
-            socket.on('user:reach', ReachUser(socket));
-            socket.on('channel:list', ListChannels(socket));
+            socket.on('user:list', socketController.ListUsers(socket));
+            socket.on('user:reach', socketController.ReachUser(socket));
+            socket.on('channel:list', socketController.ListChannels(socket));
 
-            socket.on('notification:list', ListNotifications(socket));
-            socket.on('notification:unreadcount', GetNotificationUnreadCount(socket));
-            socket.on('notification:ack', AckNotification(socket));
+            socket.on('notification:list', socketController.ListNotifications(socket));
+            socket.on('notification:unreadcount', socketController.GetNotificationUnreadCount(socket));
+            socket.on('notification:ack', socketController.AckNotification(socket));
 
             socket.on('disconnect', () => {
                 logger.debug('User disconnected from socket');

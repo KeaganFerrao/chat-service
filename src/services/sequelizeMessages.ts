@@ -1,9 +1,9 @@
-import { MessageService } from "src/interfaces/messages";
+import { MessageService } from "../interfaces/messages";
 import { literal, Op, Transaction } from "sequelize"
-import { attachments, baseUser, channel, message, notifications, userChannel, userNotification } from "../models/index";
+import { attachments, baseUser, channel, message, notifications, userChannel, userNotification } from "../models/postgres/index";
 
 export class SequelizeMessageService implements MessageService {
-    getBaseUser = async (baseUserId: number, transaction?: Transaction) => {
+    getBaseUser = async (baseUserId: string, transaction?: Transaction) => {
         const userData = await baseUser.findOne({
             attributes: ['id', 'firstName', 'lastName', 'email', 'role'],
             where: {
@@ -38,13 +38,13 @@ export class SequelizeMessageService implements MessageService {
         return channelData
     }
 
-    createUserChannels = async (data: { baseUserId: number, toBaseUserId: number, channelId: string }[], transaction: Transaction) => {
+    createUserChannels = async (data: { baseUserId: string, toBaseUserId: string, channelId: string }[], transaction: Transaction) => {
         await userChannel.bulkCreate(data, {
             transaction
         })
     }
 
-    listUsers = async (userId: number, limit: number, offset: number, search: string | undefined) => {
+    listUsers = async (userId: string, limit: number, offset: number, search: string | undefined) => {
         const users = await baseUser.findAndCountAll({
             attributes: ['id', 'firstName', 'lastName', 'type'],
             where: {
@@ -75,7 +75,7 @@ export class SequelizeMessageService implements MessageService {
         return users;
     }
 
-    listUserChannels = async (userId: number, limit: number, offset: number, search?: string) => {
+    listUserChannels = async (userId: string, limit: number, offset: number, search?: string) => {
         const unreadCountSubquery = `
         SELECT COUNT(*)
         FROM "messages"
@@ -136,7 +136,7 @@ export class SequelizeMessageService implements MessageService {
         return list;
     }
 
-    createMessage = async (fromBaseUserId: number, channelId: string, content: string | null | undefined, attachments: { fileName: string, id: string }[] | null, transaction: Transaction) => {
+    createMessage = async (fromBaseUserId: string, channelId: string, content: string | null | undefined, attachments: { fileName: string, id: string }[] | null, transaction: Transaction) => {
         const data = await message.create({
             fromBaseUserId,
             channelId,
@@ -154,7 +154,7 @@ export class SequelizeMessageService implements MessageService {
         return data;
     }
 
-    updateMessageOffset = async (userId: number, channelId: string, transaction: Transaction) => {
+    updateMessageOffset = async (userId: string, channelId: string, transaction: Transaction) => {
         await userChannel.update({
             messageOffset: new Date()
         }, {
@@ -166,7 +166,7 @@ export class SequelizeMessageService implements MessageService {
         })
     }
 
-    createAttachment = async (baseUserId: number, channelId: string, fileNames: string[], transaction: Transaction) => {
+    createAttachment = async (baseUserId: string, channelId: string, fileNames: string[], transaction: Transaction) => {
         const data = await attachments.bulkCreate(fileNames.map(fileName => ({
             baseUserId,
             channelId,
@@ -191,7 +191,7 @@ export class SequelizeMessageService implements MessageService {
         return attachment;
     }
 
-    getUsersInChannel = async (channelId: string, exceptionUserId: number, transaction: Transaction) => {
+    getUsersInChannel = async (channelId: string, exceptionUserId: string, transaction: Transaction) => {
         const unreadCountSubquery = `
         SELECT COUNT(*)
         FROM "messages"
@@ -213,7 +213,7 @@ export class SequelizeMessageService implements MessageService {
         return users
     }
 
-    getUnreadMessageCount = async (userId: number, channelId: string) => {
+    getUnreadMessageCount = async (userId: string, channelId: string) => {
         const data = await userChannel.findOne({
             attributes: ['messageOffset'],
             where: {
@@ -234,7 +234,7 @@ export class SequelizeMessageService implements MessageService {
         return unreadMessageCount
     }
 
-    ackMessage = async (userId: number, channelId: string) => {
+    ackMessage = async (userId: string, channelId: string) => {
         await userChannel.update({
             messageOffset: new Date()
         }, {
@@ -248,7 +248,7 @@ export class SequelizeMessageService implements MessageService {
         })
     }
 
-    ackNotification = async (userId: number) => {
+    ackNotification = async (userId: string) => {
         await userNotification.update({
             notificationOffset: new Date()
         }, {
@@ -261,7 +261,7 @@ export class SequelizeMessageService implements MessageService {
         })
     }
 
-    getChannel = async (channelId: string, userId: number) => {
+    getChannel = async (channelId: string, userId: string) => {
         const channel = await userChannel.findOne({
             where: {
                 baseUserId: userId,
@@ -292,7 +292,7 @@ export class SequelizeMessageService implements MessageService {
         return list;
     }
 
-    listNotifications = async (baseUserId: number, type: 'admin' | 'staff' | 'doctor' | 'patient', limit: number, offset: number) => {
+    listNotifications = async (baseUserId: string, type: 'admin' | 'staff' | 'doctor' | 'patient', limit: number, offset: number) => {
         const list = await notifications.findAndCountAll({
             attributes: ['id', 'content', 'sentOn', 'link'],
             where: {
@@ -316,7 +316,7 @@ export class SequelizeMessageService implements MessageService {
         return list;
     }
 
-    getNotificationUnreadCount = async (baseUserId: number, type: 'admin' | 'staff' | 'doctor' | 'patient') => {
+    getNotificationUnreadCount = async (baseUserId: string, type: 'admin' | 'staff' | 'doctor' | 'patient') => {
         const data = await userNotification.findOne({
             attributes: ['notificationOffset'],
             where: {

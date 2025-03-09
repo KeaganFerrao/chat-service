@@ -1,7 +1,7 @@
 import { literal, Op, Transaction } from "sequelize"
 import { attachments, baseUser, channel, message, notifications, userChannel, userNotification } from "../index"
 
-const getBaseUser = async (baseUserId: number, transaction?: Transaction) => {
+const getBaseUser = async (baseUserId: string, transaction?: Transaction) => {
     const userData = await baseUser.findOne({
         attributes: ['id', 'firstName', 'lastName', 'email', 'role'],
         where: {
@@ -36,7 +36,7 @@ const getChannelByName = async (name: string, transaction: Transaction) => {
     return channelData
 }
 
-const createUserChannels = async (data: { baseUserId: number, toBaseUserId: number, channelId: string }[], transaction: Transaction) => {
+const createUserChannels = async (data: { baseUserId: string, toBaseUserId: string, channelId: string }[], transaction: Transaction) => {
     await userChannel.bulkCreate(data, {
         transaction
     })
@@ -134,7 +134,7 @@ const listUserChannels = async (userId: number, limit: number, offset: number, s
     return list;
 }
 
-const createMessage = async (fromBaseUserId: number, channelId: string, content: string | null | undefined, attachments: { fileName: string, id: string }[] | undefined, transaction: Transaction) => {
+const createMessage = async (fromBaseUserId: string, channelId: string, content: string | null | undefined, attachments: { fileName: string, id: string }[] | undefined, transaction: Transaction) => {
     const data = await message.create({
         fromBaseUserId,
         channelId,
@@ -164,7 +164,7 @@ const updateMessageOffset = async (userId: number, channelId: string, transactio
     })
 }
 
-const createAttachment = async (baseUserId: number, channelId: string, fileNames: string[], transaction: Transaction) => {
+const createAttachment = async (baseUserId: string, channelId: string, fileNames: string[], transaction: Transaction) => {
     const data = await attachments.bulkCreate(fileNames.map(fileName => ({
         baseUserId,
         channelId,

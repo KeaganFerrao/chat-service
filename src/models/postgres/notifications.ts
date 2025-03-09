@@ -1,9 +1,9 @@
 import { DataTypes, literal, Model, Optional } from 'sequelize';
-import sequelize from '../setup/database';
+import sequelize from '../../setup/database';
 
 export interface NotificationsAttributes {
     id: string;
-    baseUserId?: number | null;
+    baseUserId?: string | null;
     content?: string | null;
     broadcastTo?: 'admin' | 'user' | 'all' | null;
     link?: string | null;
@@ -27,7 +27,7 @@ const notifications = sequelize.define<NotificationsInstance>(
             defaultValue: literal('gen_random_uuid()')
         },
         baseUserId: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.UUID,
             allowNull: true,
             references: {
                 model: {

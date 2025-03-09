@@ -1,5 +1,5 @@
 import { DataTypes, literal, Model, Optional } from 'sequelize';
-import sequelize from '../setup/database';
+import sequelize from '../../setup/database';
 
 export interface ChannelAttributes {
     id: string;

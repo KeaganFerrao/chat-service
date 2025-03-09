@@ -2,8 +2,8 @@ import mongoose from 'mongoose';
 
 const messageSchema = new mongoose.Schema({
     id: {
-        type: mongoose.Types.UUID,
-        default: () => new mongoose.Types.UUID(), // Using UUID instead of MongoDB's ObjectId
+        type: String,
+        default: () => new mongoose.Types.UUID().toString(), // Using UUID instead of MongoDB's ObjectId
         unique: true
     },
     fromBaseUserId: {
@@ -11,7 +11,7 @@ const messageSchema = new mongoose.Schema({
         required: true
     },
     channelId: {
-        type: mongoose.Types.UUID,
+        type: String,
         required: true
     },
     content: {

@@ -1,10 +1,10 @@
 import { DataTypes, literal, Model, Optional } from 'sequelize';
-import sequelize from '../setup/database';
+import sequelize from '../../setup/database';
 
 export interface AttachmentsAttributes {
     id: string;
     channelId: string;
-    baseUserId: number;
+    baseUserId: string;
     fileName: string;
     isUploaded?: boolean;
     isUploading?: boolean;
@@ -27,7 +27,7 @@ const attachments = sequelize.define<AttachmentsInstance>(
             defaultValue: literal('gen_random_uuid()')
         },
         baseUserId: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.UUID,
             allowNull: false,
             references: {
                 model: {

@@ -1,33 +1,40 @@
-import { AttachmentsCreationAttributes } from "@models/attachments";
-import { BaseUserAttributes } from "@models/baseUser";
-import { ChannelAttributes } from "@models/channel";
-import { MessageAttributes } from "@models/message";
-import { NotificationsAttributes } from "@models/notifications";
-import { userChannelAttributes } from "@models/userChannel";
+import { AttachmentsCreationAttributes } from "@models/postgres/attachments";
+import { BaseUserAttributes } from "@models/postgres/baseUser";
+import { ChannelAttributes } from "@models/postgres/channel";
+import { MessageAttributes } from "@models/postgres/message";
+import { NotificationsAttributes } from "@models/postgres/notifications";
+import { userChannelAttributes } from "@models/postgres/userChannel";
+import { ClientSession } from "mongoose";
 import { Transaction } from "sequelize";
 
 interface MessageService {
-    getBaseUser(baseUserId: number, transaction?: Transaction): Promise<BaseUserAttributes | null>;
-    createChannel(name: string, type: 'private', transaction: Transaction): Promise<ChannelAttributes>;
-    getChannelByName(name: string, transaction: Transaction): Promise<ChannelAttributes | null>;
-    createUserChannels(data: { baseUserId: number; toBaseUserId: number; channelId: string }[], transaction: Transaction): Promise<void>;
-    listUsers(userId: number, limit: number, offset: number, search?: string): Promise<{ rows: BaseUserAttributes[]; count: number }>;
-    listUserChannels(userId: number, limit: number, offset: number, search?: string): Promise<{ rows: any[]; count: number }>;
-    createMessage(fromBaseUserId: number, channelId: string, content: string | null, attachments: { fileName: string; id: string }[] | null, transaction: Transaction): Promise<MessageAttributes>;
-    updateMessageOffset(userId: number, channelId: string, transaction: Transaction): Promise<void>;
-    createAttachment(baseUserId: number, channelId: string, fileNames: string[], transaction: Transaction): Promise<AttachmentsCreationAttributes[]>;
+    getBaseUser(baseUserId: string, transaction?: Transaction | ClientSession): Promise<BaseUserAttributes | null>;
+    createChannel(name: string, type: 'private', transaction: Transaction | ClientSession): Promise<ChannelAttributes>;
+    getChannelByName(name: string, transaction: Transaction | ClientSession): Promise<ChannelAttributes | null>;
+    createUserChannels(data: { baseUserId: string; toBaseUserId: string; channelId: string }[], transaction: Transaction | ClientSession): Promise<void>;
+    listUsers(userId: string, limit: number, offset: number, search?: string): Promise<{ rows: BaseUserAttributes[]; count: number }>;
+    listUserChannels(userId: string, limit: number, offset: number, search?: string): Promise<{ rows: any[]; count: number }>;
+    createMessage(fromBaseUserId: string, channelId: string, content: string | null, attachments: { fileName: string; id: string }[] | null, transaction: Transaction | ClientSession): Promise<MessageAttributes>;
+    updateMessageOffset(userId: string, channelId: string, transaction: Transaction | ClientSession): Promise<void>;
+    createAttachment(baseUserId: string, channelId: string, fileNames: string[], transaction: Transaction | ClientSession): Promise<AttachmentsCreationAttributes[]>;
     getAttachment(attachmentId: string, channelId: string): Promise<AttachmentsCreationAttributes | null>;
-    getUsersInChannel(channelId: string, exceptionUserId: number, transaction: Transaction): Promise<userChannelAttributes[]>;
-    getUnreadMessageCount(userId: number, channelId: string): Promise<number>;
-    ackMessage(userId: number, channelId: string, messageId: number): Promise<void>;
-    ackNotification(userId: number, notificationId: number): Promise<void>;
-    getChannel(channelId: string, userId: number): Promise<userChannelAttributes | null>;
+    getUsersInChannel(channelId: string, exceptionUserId: string, transaction: Transaction | ClientSession): Promise<userChannelAttributes[]>;
+    getUnreadMessageCount(userId: string, channelId: string): Promise<number>;
+    ackMessage(userId: string, channelId: string): Promise<void>;
+    ackNotification(userId: string): Promise<void>;
+    getChannel(channelId: string, userId: string): Promise<userChannelAttributes | null>;
     listMessages(channelId: string, limit: number, offset: number): Promise<{ rows: MessageAttributes[]; count: number }>;
-    listNotifications(baseUserId: number, type: string, limit: number, offset: number): Promise<{ rows: NotificationsAttributes[]; count: number }>;
-    getNotificationUnreadCount(baseUserId: number, type: string): Promise<number>;
-    getAttachmentById(attachmentId: string, baseUserId: string, transaction: Transaction): Promise<AttachmentsCreationAttributes | null>;
-    updateAttachmentUploadSuccess(attachmentIds: string[], transaction: Transaction): Promise<void>;
-    updateAttachmentUploadFailure(attachmentIds: string[], transaction: Transaction): Promise<void>;
+    listNotifications(baseUserId: string, type: string, limit: number, offset: number): Promise<{ rows: NotificationsAttributes[]; count: number }>;
+    getNotificationUnreadCount(baseUserId: string, type: string): Promise<number>;
+    getAttachmentById(attachmentId: string, baseUserId: string, transaction: Transaction | ClientSession): Promise<AttachmentsCreationAttributes | null>;
+    updateAttachmentUploadSuccess(attachmentIds: string[], transaction: Transaction | ClientSession): Promise<void>;
+    updateAttachmentUploadFailure(attachmentIds: string[], transaction: Transaction | ClientSession): Promise<void>;
 }
 
-export { MessageService };
+interface TransactionManager {
+    startTransaction(): Promise<Transaction | ClientSession>;
+    commitTransaction(transaction: Transaction | ClientSession): Promise<void>;
+    rollbackTransaction(transaction: Transaction | ClientSession): Promise<void>;
+}
+
+export { MessageService, TransactionManager };

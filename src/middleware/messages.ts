@@ -1,4 +1,4 @@
-import { getAttachmentById } from "@models/helpers/messages";
+import { getAttachmentById } from "@models/postgres/helpers/messages";
 import logger from "@setup/logger";
 import multer from "@setup/multer";
 import { ProtectedPayload } from "@type/utility";

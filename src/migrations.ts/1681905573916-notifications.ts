@@ -10,7 +10,7 @@ module.exports = {
                 defaultValue: literal('gen_random_uuid()')
             },
             baseUserId: {
-                type: INTEGER,
+                type: UUID,
                 allowNull: true,
                 references: {
                     model: {

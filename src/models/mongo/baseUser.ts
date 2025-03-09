@@ -2,8 +2,8 @@ import mongoose from 'mongoose';
 
 const baseUserSchema = new mongoose.Schema({
     id: {
-        type: mongoose.Types.UUID,
-        default: () => new mongoose.Types.UUID(), // Using UUID instead of MongoDB's ObjectId
+        type: String,
+        default: () => new mongoose.Types.UUID().toString(), // Using UUID instead of MongoDB's ObjectId
         unique: true
     },
     role: {

@@ -1,9 +1,9 @@
 import { DataTypes, literal, Model, Optional } from 'sequelize';
-import sequelize from '../setup/database';
+import sequelize from '../../setup/database';
 
 export interface MessageAttributes {
     id: string;
-    fromBaseUserId: number;
+    fromBaseUserId: string;
     channelId: string;
     content?: string | null;
     attachments?: string;
@@ -26,7 +26,7 @@ const message = sequelize.define<MessageInstance>(
             defaultValue: literal('gen_random_uuid()')
         },
         fromBaseUserId: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.UUID,
             allowNull: false,
             references: {
                 model: {

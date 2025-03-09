@@ -1,581 +1,577 @@
-import { ackMessage, ackNotification, createAttachment, createChannel, createMessage, createUserChannels, getAttachment, getChannel, getChannelByName, getNotificationUnreadCount, getUsersInChannel, listMessages, listNotifications, listUserChannels, listUsers, updateMessageOffset } from "@models/helpers/messages";
-import sequelize from "@setup/database";
+import { MessageService, TransactionManager } from "../interfaces/messages";
 import logger from "@setup/logger";
 import { Socket } from "socket.io"
-import { AttachmentsInstance } from '../models/attachments';
+import { AttachmentsCreationAttributes, AttachmentsInstance } from '../models/postgres/attachments';
 import { getObjectUrl } from "@utility/storage";
-import { getBaseUser } from "@models/helpers/messages";
 import { validateAckMessagePayload, validateAckNotificationPayload, validateChannelListPayload, validateDownloadAttachmentPayload, validateListMessagesPayload, validateNotificationMessagesPayload, validateReachUserPayload, validateSendMessagePayload, validateUserListPayload } from "@utility/message";
 
-const ReachUser = (socket: Socket) => async (payload: { userId: number }, callback: any) => {
-    if (typeof callback !== 'function') {
-        return;
+export class SocketController {
+    private messageService: MessageService;
+    private transactionManager: TransactionManager;
+
+    constructor(service: MessageService, transactionManager: TransactionManager) {
+        this.messageService = service;
+        this.transactionManager = transactionManager;
     }
 
-    const transaction = await sequelize.transaction();
-    try {
-        const userId = payload.userId;
-        const baseUserId = socket.data.payload.baseUserId;
-
-        const validation = validateReachUserPayload(payload);
-        if (!validation.success) {
-            await transaction.rollback();
-            return callback({
-                success: false,
-                data: [],
-                message: validation.message,
-                errors: []
-            });
+    ReachUser = (socket: Socket) => async (payload: { userId: string }, callback: any) => {
+        if (typeof callback !== 'function') {
+            return;
         }
 
-        if (userId === baseUserId) {
-            await transaction.rollback();
-            return callback({
-                success: false,
-                data: [],
-                message: 'Cannot reach self',
-                errors: []
-            });
-        }
+        const transaction = await this.transactionManager.startTransaction();
+        try {
+            const userId = payload.userId;
+            const baseUserId = socket.data.payload.baseUserId;
 
-        const user = await getBaseUser(userId, transaction);
-        if (!user) {
-            await transaction.rollback();
-            return callback({
-                success: false,
-                data: [],
-                message: 'User not found',
-                errors: []
-            });
-        }
+            const validation = validateReachUserPayload(payload);
+            if (!validation.success) {
+                await this.transactionManager.rollbackTransaction(transaction);
+                return callback({
+                    success: false,
+                    data: [],
+                    message: validation.message,
+                    errors: []
+                });
+            }
 
-        //TODO: Need to add validaton to check if user is allowed to reach
+            if (userId === baseUserId) {
+                await this.transactionManager.rollbackTransaction(transaction);
+                return callback({
+                    success: false,
+                    data: [],
+                    message: 'Cannot reach self',
+                    errors: []
+                });
+            }
 
-        const channelName = userId > baseUserId ? `user:${baseUserId}:${userId}` : `user:${userId}:${baseUserId}`;
-        const channelExists = await getChannelByName(channelName, transaction);
-        if (channelExists) {
-            await transaction.commit();
+            const user = await this.messageService.getBaseUser(userId, transaction);
+            if (!user) {
+                await this.transactionManager.rollbackTransaction(transaction);
+                return callback({
+                    success: false,
+                    data: [],
+                    message: 'User not found',
+                    errors: []
+                });
+            }
+
+            //TODO: Need to add validaton to check if user is allowed to reach
+
+            const channelName = userId > baseUserId ? `user:${baseUserId}:${userId}` : `user:${userId}:${baseUserId}`;
+            const channelExists = await this.messageService.getChannelByName(channelName, transaction);
+            if (channelExists) {
+                await this.transactionManager.rollbackTransaction(transaction);
+                return callback({
+                    success: true,
+                    data: {
+                        channelId: channelExists.id
+                    },
+                    message: 'Channel already exists',
+                    errors: []
+                });
+            }
+
+            const channel = await this.messageService.createChannel(channelName, 'private', transaction);
+
+            await this.messageService.createUserChannels([
+                { baseUserId: baseUserId, toBaseUserId: userId, channelId: channel.id },
+                { baseUserId: userId, toBaseUserId: baseUserId, channelId: channel.id }
+            ], transaction);
+
+            await this.transactionManager.commitTransaction(transaction);
+
             return callback({
                 success: true,
                 data: {
-                    channelId: channelExists.id
+                    channelId: channel.id
                 },
-                message: 'Channel already exists',
+                message: 'Channel created successfully',
                 errors: []
             });
-        }
+        } catch (error) {
+            logger.error('Error creating channel');
+            logger.error(error);
+            await this.transactionManager.rollbackTransaction(transaction);
 
-        const channel = await createChannel(channelName, 'private', transaction);
-
-        await createUserChannels([
-            { baseUserId: baseUserId, toBaseUserId: userId, channelId: channel.id },
-            { baseUserId: userId, toBaseUserId: baseUserId, channelId: channel.id }
-        ], transaction);
-
-        await transaction.commit();
-
-        return callback({
-            success: true,
-            data: {
-                channelId: channel.id
-            },
-            message: 'Channel created successfully',
-            errors: []
-        });
-    } catch (error) {
-        logger.error('Error creating channel');
-        logger.error(error);
-        await transaction.rollback();
-
-        return callback({
-            success: false,
-            data: [],
-            message: 'Error creating channel' + error,
-            errors: []
-        })
-    }
-}
-
-const ListUsers = (socket: Socket) => async (payload: { page: number, size: number, search?: string }, callback: any) => {
-    if (typeof callback !== 'function') {
-        return;
-    }
-
-    try {
-        const userId = socket.data.payload.baseUserId;
-        const { page, size, search } = payload;
-
-        const validation = validateUserListPayload(payload);
-        if (!validation.success) {
             return callback({
                 success: false,
                 data: [],
-                message: validation.message,
+                message: 'Error creating channel' + error,
                 errors: []
-            });
+            })
         }
-
-        const offset = Number(size) * (Number(page) - 1);
-
-        const users = await listUsers(userId, size, offset, search);
-
-        return callback({
-            success: true,
-            data: users,
-            message: 'Users listed successfully',
-            errors: []
-        });
-    } catch (error) {
-        logger.error('Error listing users');
-        logger.error(error);
-
-        return callback({
-            success: false,
-            data: [],
-            message: 'Error listing users',
-            errors: []
-        })
-    }
-}
-
-const ListChannels = (socket: Socket) => async (payload: { page: number, size: number, search?: string }, callback: any) => {
-    if (typeof callback !== 'function') {
-        return;
     }
 
-    try {
-        const userId = socket.data.payload.baseUserId;
-        const { page, size, search } = payload;
-
-        const validation = validateChannelListPayload(payload);
-        if (!validation.success) {
-            return callback({
-                success: false,
-                data: [],
-                message: validation.message,
-                errors: []
-            });
+    ListUsers = (socket: Socket) => async (payload: { page: number, size: number, search?: string }, callback: any) => {
+        if (typeof callback !== 'function') {
+            return;
         }
 
-        const offset = Number(size) * (Number(page) - 1);
+        try {
+            const userId = socket.data.payload.baseUserId;
+            const { page, size, search } = payload;
 
-        logger.debug(`Listing channels for user ${userId}`);
-        const list = await listUserChannels(userId, size, offset, search);
-
-        return callback({
-            success: true,
-            data: list,
-            message: 'Channel listed successfully',
-            errors: []
-        });
-    } catch (error) {
-        logger.error('Error listing channels');
-        logger.error(error);
-
-        return callback({
-            success: false,
-            data: [],
-            message: 'Error listing channels',
-            errors: []
-        })
-    }
-}
-
-const SendMessage = (socket: Socket) => async (payload: { channelId: string, content: string, attachments: string[] }, callback: any) => {
-    if (typeof callback !== 'function') {
-        return;
-    }
-
-    const transaction = await sequelize.transaction();
-    try {
-        const { baseUserId: fromUserId, firstName, lastName } = socket.data.payload;
-        const { channelId, content, attachments } = payload;
-
-        const validation = validateSendMessagePayload(payload);
-        if (!validation.success) {
-            await transaction.rollback();
-            return callback({
-                success: false,
-                data: [],
-                message: validation.message,
-                errors: []
-            });
-        }
-
-        const channel = await getChannel(channelId, fromUserId);
-        if (!channel) {
-            await transaction.rollback();
-            return callback({
-                success: false,
-                data: [],
-                message: 'Channel not found',
-                errors: []
-            });
-        }
-
-        //TODO: Need to add validation to check if user is allowed to send message in channel
-
-        let attachmentData: AttachmentsInstance[] = [];
-        if (attachments.length > 0) {
-            logger.debug(`Creating attachments for channel ${channelId}, from user ${fromUserId}`);
-            attachmentData = await createAttachment(fromUserId, channelId, attachments, transaction);
-        }
-
-        const formattedAttachments = attachmentData.map(attachment => ({ id: attachment.id, fileName: attachment.fileName }));
-        logger.debug(`Creating message for channel ${channelId}, from user ${fromUserId}`);
-        logger.debug(`Message content: ${content}`);
-        logger.debug(`Message attachments: ${JSON.stringify(formattedAttachments)}`);
-
-        const message = await createMessage(fromUserId, channelId, content, formattedAttachments, transaction);
-        await updateMessageOffset(fromUserId, channelId, transaction);
-
-        logger.debug(`Getting users in channel ${channelId}`);
-        const usersInChannel = await getUsersInChannel(channelId, fromUserId, transaction);
-
-        logger.debug(`Sending message to users in channel ${channelId}`);
-        usersInChannel.forEach(user => {
-            socket
-                .to(`user:${user.baseUserId}`)
-                .emit('message:new', {
-                    from: {
-                        id:fromUserId,
-                        firstName,
-                        lastName
-                    },
-                    messageId: message.id,
-                    channelId,
-                    totalUnreadMessages: user.unreadMessageCount,
-                    content,
-                    attachments: formattedAttachments,
-                    sentOn: new Date()
+            const validation = validateUserListPayload(payload);
+            if (!validation.success) {
+                return callback({
+                    success: false,
+                    data: [],
+                    message: validation.message,
+                    errors: []
                 });
-        });
+            }
 
-        await transaction.commit();
+            const offset = Number(size) * (Number(page) - 1);
 
-        return callback({
-            success: true,
-            data: {
-                messageId: message.id,
-                attachments: formattedAttachments,
-            },
-            message: 'Message sent successfully',
-            errors: []
-        });
-    } catch (error) {
-        logger.error('Error sending message');
-        logger.error(error);
-        await transaction.rollback();
+            const users = await this.messageService.listUsers(userId, size, offset, search);
 
-        return callback({
-            success: false,
-            data: [],
-            message: 'Error sending message',
-            errors: []
-        })
-    }
-}
+            return callback({
+                success: true,
+                data: users,
+                message: 'Users listed successfully',
+                errors: []
+            });
+        } catch (error) {
+            logger.error('Error listing users');
+            logger.error(error);
 
-const DownloadAttachment = (socket: Socket) => async (payload: { attachmentId: string, channelId: string }, callback: any) => {
-    if (typeof callback !== 'function') {
-        return;
+            return callback({
+                success: false,
+                data: [],
+                message: 'Error listing users',
+                errors: []
+            })
+        }
     }
 
-    try {
-        const { baseUserId } = socket.data.payload;
-        const { attachmentId, channelId } = payload;
+    ListChannels = (socket: Socket) => async (payload: { page: number, size: number, search?: string }, callback: any) => {
+        if (typeof callback !== 'function') {
+            return;
+        }
 
-        const validation = validateDownloadAttachmentPayload(payload);
-        if (!validation.success) {
+        try {
+            const userId = socket.data.payload.baseUserId;
+            const { page, size, search } = payload;
+
+            const validation = validateChannelListPayload(payload);
+            if (!validation.success) {
+                return callback({
+                    success: false,
+                    data: [],
+                    message: validation.message,
+                    errors: []
+                });
+            }
+
+            const offset = Number(size) * (Number(page) - 1);
+
+            logger.debug(`Listing channels for user ${userId}`);
+            const list = await this.messageService.listUserChannels(userId, size, offset, search);
+
+            return callback({
+                success: true,
+                data: list,
+                message: 'Channel listed successfully',
+                errors: []
+            });
+        } catch (error) {
+            logger.error('Error listing channels');
+            logger.error(error);
+
             return callback({
                 success: false,
                 data: [],
-                message: validation.message,
+                message: 'Error listing channels',
                 errors: []
-            });
+            })
+        }
+    }
+
+    SendMessage = (socket: Socket) => async (payload: { channelId: string, content: string, attachments: string[] }, callback: any) => {
+        if (typeof callback !== 'function') {
+            return;
         }
 
-        const channel = await getChannel(channelId, baseUserId);
-        if (!channel) {
+        const transaction = await this.transactionManager.startTransaction();
+        try {
+            const { baseUserId: fromUserId, firstName, lastName } = socket.data.payload;
+            const { channelId, content, attachments } = payload;
+
+            const validation = validateSendMessagePayload(payload);
+            if (!validation.success) {
+                await this.transactionManager.rollbackTransaction(transaction);
+                return callback({
+                    success: false,
+                    data: [],
+                    message: validation.message,
+                    errors: []
+                });
+            }
+
+            const channel = await this.messageService.getChannel(channelId, fromUserId);
+            if (!channel) {
+                await this.transactionManager.rollbackTransaction(transaction);
+                return callback({
+                    success: false,
+                    data: [],
+                    message: 'Channel not found',
+                    errors: []
+                });
+            }
+
+            //TODO: Need to add validation to check if user is allowed to send message in channel
+
+            let attachmentData: AttachmentsCreationAttributes[] = [];
+            if (attachments.length > 0) {
+                logger.debug(`Creating attachments for channel ${channelId}, from user ${fromUserId}`);
+                attachmentData = await this.messageService.createAttachment(fromUserId, channelId, attachments, transaction);
+            }
+
+            const formattedAttachments = attachmentData.map(attachment => ({ id: attachment.id!, fileName: attachment.fileName }));
+            logger.debug(`Creating message for channel ${channelId}, from user ${fromUserId}`);
+            logger.debug(`Message content: ${content}`);
+            logger.debug(`Message attachments: ${JSON.stringify(formattedAttachments)}`);
+
+            const message = await this.messageService.createMessage(fromUserId, channelId, content, formattedAttachments, transaction);
+            await this.messageService.updateMessageOffset(fromUserId, channelId, transaction);
+
+            logger.debug(`Getting users in channel ${channelId}`);
+            const usersInChannel = await this.messageService.getUsersInChannel(channelId, fromUserId, transaction);
+
+            logger.debug(`Sending message to users in channel ${channelId}`);
+            usersInChannel.forEach(user => {
+                socket
+                    .to(`user:${user.baseUserId}`)
+                    .emit('message:new', {
+                        from: {
+                            id: fromUserId,
+                            firstName,
+                            lastName
+                        },
+                        messageId: message.id,
+                        channelId,
+                        totalUnreadMessages: user.unreadMessageCount,
+                        content,
+                        attachments: formattedAttachments,
+                        sentOn: new Date()
+                    });
+            });
+
+            await this.transactionManager.commitTransaction(transaction);
+
+            return callback({
+                success: true,
+                data: {
+                    messageId: message.id,
+                    attachments: formattedAttachments,
+                },
+                message: 'Message sent successfully',
+                errors: []
+            });
+        } catch (error) {
+            logger.error('Error sending message');
+            logger.error(error);
+            await this.transactionManager.rollbackTransaction(transaction);
+
             return callback({
                 success: false,
                 data: [],
-                message: 'Channel not found',
+                message: 'Error sending message',
                 errors: []
-            });
+            })
+        }
+    }
+
+    DownloadAttachment = (socket: Socket) => async (payload: { attachmentId: string, channelId: string }, callback: any) => {
+        if (typeof callback !== 'function') {
+            return;
         }
 
-        const attachment = await getAttachment(attachmentId, channelId);
-        if (!attachment) {
+        try {
+            const { baseUserId } = socket.data.payload;
+            const { attachmentId, channelId } = payload;
+
+            const validation = validateDownloadAttachmentPayload(payload);
+            if (!validation.success) {
+                return callback({
+                    success: false,
+                    data: [],
+                    message: validation.message,
+                    errors: []
+                });
+            }
+
+            const channel = await this.messageService.getChannel(channelId, baseUserId);
+            if (!channel) {
+                return callback({
+                    success: false,
+                    data: [],
+                    message: 'Channel not found',
+                    errors: []
+                });
+            }
+
+            const attachment = await this.messageService.getAttachment(attachmentId, channelId);
+            if (!attachment) {
+                return callback({
+                    success: false,
+                    data: [],
+                    message: 'Attachment not found',
+                    errors: []
+                });
+            }
+
+            if (attachment.hasUploadFailed) {
+                return callback({
+                    success: false,
+                    data: [],
+                    message: 'Failed to upload attachment, please try again',
+                    errors: []
+                });
+            }
+
+            if (attachment.isUploading) {
+                return callback({
+                    success: true,
+                    data: [],
+                    message: 'Uploading attachment, please try again in a moment',
+                    errors: []
+                })
+            }
+
+            if (!attachment.isUploaded) {
+                return callback({
+                    success: false,
+                    data: [],
+                    message: 'Attachment not uploaded',
+                    errors: []
+                })
+            }
+
+            const url = await getObjectUrl(`attachments/${attachmentId}`, 5 * 60);
+            return callback({
+                success: true,
+                data: {
+                    url,
+                    fileName: attachment.fileName
+                },
+                message: 'Attachment fetched successfully',
+                errors: []
+            });
+        } catch (error) {
+            logger.error('Error fetching attachment');
+            logger.error(error);
+
             return callback({
                 success: false,
                 data: [],
-                message: 'Attachment not found',
+                message: 'Error fetching attachment',
                 errors: []
-            });
+            })
+        }
+    }
+
+    AckMessage = (socket: Socket) => async (payload: { channelId: string, messageId: number }, callback: any) => {
+        if (typeof callback !== 'function') {
+            return;
         }
 
-        if (attachment.hasUploadFailed) {
-            return callback({
-                success: false,
-                data: [],
-                message: 'Failed to upload attachment, please try again',
-                errors: []
-            });
-        }
+        try {
+            const { baseUserId } = socket.data.payload;
+            const { channelId, messageId } = payload;
 
-        if (attachment.isUploading) {
+            const validation = validateAckMessagePayload(payload);
+            if (!validation.success) {
+                return callback({
+                    success: false,
+                    data: [],
+                    message: validation.message,
+                    errors: []
+                });
+            }
+
+            logger.debug(`Acknowledging message ${messageId} in channel ${channelId} for user ${baseUserId}`);
+            await this.messageService.ackMessage(baseUserId, channelId);
+
             return callback({
                 success: true,
                 data: [],
-                message: 'Uploading attachment, please try again in a moment',
+                message: 'Message acknowledged successfully',
+                errors: []
+            });
+        } catch (error) {
+            logger.error('Error acknowledging message');
+            logger.error(error);
+
+            return callback({
+                success: false,
+                data: [],
+                message: 'Error acknowledging message',
                 errors: []
             })
         }
+    }
 
-        if (!attachment.isUploaded) {
+    ListMessages = (socket: Socket) => async (payload: { channelId: string, page: number, size: number }, callback: any) => {
+        if (typeof callback !== 'function') {
+            return;
+        }
+
+        try {
+            const { baseUserId } = socket.data.payload;
+            const { channelId, page, size } = payload;
+
+            const validation = validateListMessagesPayload(payload);
+            if (!validation.success) {
+                return callback({
+                    success: false,
+                    data: [],
+                    message: validation.message,
+                    errors: []
+                });
+            }
+
+            const offset = Number(size) * (Number(page) - 1);
+
+            const channel = await this.messageService.getChannel(channelId, baseUserId);
+            if (!channel) {
+                return callback({
+                    success: false,
+                    data: [],
+                    message: 'Channel not found',
+                    errors: []
+                })
+            }
+
+            const data = await this.messageService.listMessages(channelId, size, offset);
+            return callback({
+                success: true,
+                data,
+                message: 'Messages listed successfully',
+                errors: []
+            });
+        } catch (error) {
+            logger.error('Error listing messages');
+            logger.error(error);
+
             return callback({
                 success: false,
                 data: [],
-                message: 'Attachment not uploaded',
+                message: 'Error listing messages',
                 errors: []
             })
         }
-
-        const url = await getObjectUrl(`attachments/${attachmentId}`, 5 * 60);
-        return callback({
-            success: true,
-            data: {
-                url,
-                fileName: attachment.fileName
-            },
-            message: 'Attachment fetched successfully',
-            errors: []
-        });
-    } catch (error) {
-        logger.error('Error fetching attachment');
-        logger.error(error);
-
-        return callback({
-            success: false,
-            data: [],
-            message: 'Error fetching attachment',
-            errors: []
-        })
-    }
-}
-
-const AckMessage = (socket: Socket) => async (payload: { channelId: string, messageId: number }, callback: any) => {
-    if (typeof callback !== 'function') {
-        return;
     }
 
-    try {
-        const { baseUserId } = socket.data.payload;
-        const { channelId, messageId } = payload;
-
-        const validation = validateAckMessagePayload(payload);
-        if (!validation.success) {
-            return callback({
-                success: false,
-                data: [],
-                message: validation.message,
-                errors: []
-            });
+    ListNotifications = (socket: Socket) => async (payload: { page: number, size: number }, callback: any) => {
+        if (typeof callback !== 'function') {
+            return;
         }
 
-        logger.debug(`Acknowledging message ${messageId} in channel ${channelId} for user ${baseUserId}`);
-        await ackMessage(baseUserId, channelId);
+        try {
+            const { baseUserId, type } = socket.data.payload;
+            const { page, size } = payload;
 
-        return callback({
-            success: true,
-            data: [],
-            message: 'Message acknowledged successfully',
-            errors: []
-        });
-    } catch (error) {
-        logger.error('Error acknowledging message');
-        logger.error(error);
+            const validation = validateNotificationMessagesPayload(payload);
+            if (!validation.success) {
+                return callback({
+                    success: false,
+                    data: [],
+                    message: validation.message,
+                    errors: []
+                });
+            }
 
-        return callback({
-            success: false,
-            data: [],
-            message: 'Error acknowledging message',
-            errors: []
-        })
-    }
-}
+            const offset = Number(size) * (Number(page) - 1);
 
-const ListMessages = (socket: Socket) => async (payload: { channelId: string, page: number, size: number }, callback: any) => {
-    if (typeof callback !== 'function') {
-        return;
-    }
-
-    try {
-        const { baseUserId } = socket.data.payload;
-        const { channelId, page, size } = payload;
-
-        const validation = validateListMessagesPayload(payload);
-        if (!validation.success) {
+            const data = await this.messageService.listNotifications(baseUserId, type, size, offset);
             return callback({
-                success: false,
-                data: [],
-                message: validation.message,
+                success: true,
+                data,
+                message: 'Notifications listed successfully',
                 errors: []
             });
-        }
+        } catch (error) {
+            logger.error('Error listing notifications');
+            logger.error(error);
 
-        const offset = Number(size) * (Number(page) - 1);
-
-        const channel = await getChannel(channelId, baseUserId);
-        if (!channel) {
             return callback({
                 success: false,
                 data: [],
-                message: 'Channel not found',
+                message: 'Error listing notifications',
                 errors: []
             })
         }
-
-        const data = await listMessages(channelId, size, offset);
-        return callback({
-            success: true,
-            data,
-            message: 'Messages listed successfully',
-            errors: []
-        });
-    } catch (error) {
-        logger.error('Error listing messages');
-        logger.error(error);
-
-        return callback({
-            success: false,
-            data: [],
-            message: 'Error listing messages',
-            errors: []
-        })
-    }
-}
-
-const ListNotifications = (socket: Socket) => async (payload: { page: number, size: number }, callback: any) => {
-    if (typeof callback !== 'function') {
-        return;
     }
 
-    try {
-        const { baseUserId, type } = socket.data.payload;
-        const { page, size } = payload;
+    GetNotificationUnreadCount = (socket: Socket) => async (payload: {}, callback: any) => {
+        if (typeof callback !== 'function') {
+            return;
+        }
 
-        const validation = validateNotificationMessagesPayload(payload);
-        if (!validation.success) {
+        try {
+            const { baseUserId, type } = socket.data.payload;
+
+            const data = await this.messageService.getNotificationUnreadCount(baseUserId, type);
+            return callback({
+                success: true,
+                data,
+                message: 'Notifications unread count fetched successfully',
+                errors: []
+            });
+        } catch (error) {
+            logger.error('Error listing notifications unread count');
+            logger.error(error);
+
             return callback({
                 success: false,
                 data: [],
-                message: validation.message,
+                message: 'Error listing notifications unread count',
                 errors: []
-            });
+            })
+        }
+    }
+
+    AckNotification = (socket: Socket) => async (payload: { notificationId: number }, callback: any) => {
+        if (typeof callback !== 'function') {
+            return;
         }
 
-        const offset = Number(size) * (Number(page) - 1);
+        try {
+            const { baseUserId } = socket.data.payload;
+            const { notificationId } = payload;
 
-        const data = await listNotifications(baseUserId, type, size, offset);
-        return callback({
-            success: true,
-            data,
-            message: 'Notifications listed successfully',
-            errors: []
-        });
-    } catch (error) {
-        logger.error('Error listing notifications');
-        logger.error(error);
+            const validation = validateAckNotificationPayload(payload);
+            if (!validation.success) {
+                return callback({
+                    success: false,
+                    data: [],
+                    message: validation.message,
+                    errors: []
+                });
+            }
 
-        return callback({
-            success: false,
-            data: [],
-            message: 'Error listing notifications',
-            errors: []
-        })
-    }
-}
+            logger.debug(`Acknowledging notification ${notificationId} for user ${baseUserId}`);
+            await this.messageService.ackNotification(baseUserId);
 
-const GetNotificationUnreadCount = (socket: Socket) => async (payload: {}, callback: any) => {
-    if (typeof callback !== 'function') {
-        return;
-    }
+            return callback({
+                success: true,
+                data: [],
+                message: 'Notification acknowledged successfully',
+                errors: []
+            });
+        } catch (error) {
+            logger.error('Error acknowledging notification');
+            logger.error(error);
 
-    try {
-        const { baseUserId, type } = socket.data.payload;
-
-        const data = await getNotificationUnreadCount(baseUserId, type);
-        return callback({
-            success: true,
-            data,
-            message: 'Notifications unread count fetched successfully',
-            errors: []
-        });
-    } catch (error) {
-        logger.error('Error listing notifications unread count');
-        logger.error(error);
-
-        return callback({
-            success: false,
-            data: [],
-            message: 'Error listing notifications unread count',
-            errors: []
-        })
-    }
-}
-
-const AckNotification = (socket: Socket) => async (payload: { notificationId: number }, callback: any) => {
-    if (typeof callback !== 'function') {
-        return;
-    }
-
-    try {
-        const { baseUserId } = socket.data.payload;
-        const { notificationId } = payload;
-
-        const validation = validateAckNotificationPayload(payload);
-        if (!validation.success) {
             return callback({
                 success: false,
                 data: [],
-                message: validation.message,
+                message: 'Error acknowledging notification',
                 errors: []
-            });
+            })
         }
-
-        logger.debug(`Acknowledging notification ${notificationId} for user ${baseUserId}`);
-        await ackNotification(baseUserId);
-
-        return callback({
-            success: true,
-            data: [],
-            message: 'Notification acknowledged successfully',
-            errors: []
-        });
-    } catch (error) {
-        logger.error('Error acknowledging notification');
-        logger.error(error);
-
-        return callback({
-            success: false,
-            data: [],
-            message: 'Error acknowledging notification',
-            errors: []
-        })
     }
-}
 
-export {
-    ReachUser,
-    ListChannels,
-    SendMessage,
-    AckMessage,
-    ListMessages,
-    DownloadAttachment,
-    ListUsers,
-    ListNotifications,
-    AckNotification,
-    GetNotificationUnreadCount
 }

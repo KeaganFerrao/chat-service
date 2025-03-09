@@ -1,14 +1,12 @@
-import { getBaseUser } from "@models/helpers/messages";
-import sequelize from "@setup/database";
+import { getBaseUser } from "@models/postgres/helpers/messages";
 import logger from "@setup/logger";
-import { ProtectedPayload, RequestWithPayload } from "@type/utility";
 import { sendResponse } from "@utility/api";
 import { decodeToken } from "@utility/auth";
-import { NextFunction, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { JwtPayload } from "jsonwebtoken";
 import { Transaction } from "sequelize";
 
-const ValidateToken = async (req: RequestWithPayload<ProtectedPayload>, res: Response, next: NextFunction) => {
+const ValidateToken = async (req: Request, res: Response, next: NextFunction) => {
     let transaction: Transaction | null = null;
     try {
         logger.debug('Validating Admin token');
@@ -32,19 +30,10 @@ const ValidateToken = async (req: RequestWithPayload<ProtectedPayload>, res: Res
             return sendResponse(res, 401, 'Invalid token');
         }
 
-        transaction = await sequelize.transaction({ isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ });
-        const user = await getBaseUser(decodedToken.id, transaction);
+        const user = await getBaseUser(decodedToken.id);
         if (!user) {
             logger.debug('Invalid user');
-            await transaction.rollback();
             return sendResponse(res, 403, 'Invalid user');
-        }
-
-
-        req.transaction = transaction;
-        req.payload = {
-            baseUserId: user.id,
-            email: user.email,
         }
 
         logger.debug('Token validated successfully');
@@ -52,7 +41,6 @@ const ValidateToken = async (req: RequestWithPayload<ProtectedPayload>, res: Res
     } catch (error: any) {
         logger.error('Error while validating token');
         logger.error(error);
-        await transaction?.rollback();
         return sendResponse(res, 500, error?.message?.toString() || 'Internal server error');
 
     }
