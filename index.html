@@ -8,7 +8,7 @@
 </head>
 
 <body>
-    Welcome to the socket client Hairdao
+    Welcome to the socket client
     <input id="message-box" type="text">
     <button id="message-button">Click to send message</button>
 
@@ -25,18 +25,20 @@
     <button id="notification-unread-count">Notification unread count</button>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
-        const token = 'DOCTOR_SESSION_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJzYW1AeW9wbWFpbC5jb20iLCJjbGFpbSI6ImRvY3RvciIsInNlc3Npb25JZCI6IjU0MjgxYjMzMjBhNTY5YTc2NTA1MDA3NGU3ZjY0ZGZlNTU1ZTIyODYiLCJpYXQiOjE3Mzc3MDg5NDAsImV4cCI6MTczNzc5NTM0MH0.BfTx_LD5z45zE8z2twEIbiEs9aF7TwCtlkwgE50VmnE; Path=/; Secure; HttpOnly; Expires=Thu, 25 Feb 2025 12:26:47 GMT;'
-        document.cookie = token;
+        const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjA2ZjA0NDFjLTgwZjYtNDNmNi1hOTYzLTAzYzdiNmNjMmUyMSIsImlhdCI6MTc0MTk2ODEwOSwiZXhwIjoxNzQxOTcxNzA5fQ._gdmeGJe5phx6x-dyzonhuC0WqbVw8V-mDbCOEG0-Zg'
 
         var socket = io("http://localhost:3006", {
-            withCredentials: true,
-            query: {
-                type: 'doctor'
+            transportOptions: {
+                polling: {
+                    extraHeaders: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
             }
         });
 
-        const channelId = 'c314e4a7-aa1f-4f09-9937-71e5962ea88f';
-        const userToReach = 2;
+        const channelId = '186b5578-3440-474d-88a5-bba8ba73e000';
+        const userToReach = 'ec36d4db-7579-40ce-8d99-fd1238134585';
 
         socket.on("connect", () => {
             console.log("Connected to server");

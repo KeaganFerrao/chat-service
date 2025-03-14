@@ -13,10 +13,6 @@ export interface RequestWithPayload<T> extends Request {
     transaction?: Transaction;
 }
 
-export interface WithTransaction extends Request {
-    transaction?: Transaction;
-}
-
 export type Falsy = null | undefined
 
 export type ProtectedPayload = {

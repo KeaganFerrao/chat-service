@@ -4,7 +4,6 @@ import { DB_TYPE, FRONTEND_URL } from "./secrets";
 import logger from "./logger";
 import { JwtPayload } from "jsonwebtoken";
 import { decodeToken } from "@utility/auth";
-import { getBaseUser } from "@models/postgres/helpers/messages";
 import { SocketController } from "@controllers/socket";
 import { MessageService, TransactionManager } from "../interfaces/messages";
 import { MongoMessageService } from "../services/mongoMessages";
@@ -27,8 +26,7 @@ const socketController = new SocketController(messageService, transactionManager
 const setUpSocket = (server: httpServer) => {
     const io = new Server(server, {
         cors: {
-            origin: [FRONTEND_URL!, 'http://localhost:5173', 'http://localhost:4173', 'https://localhost:5173', 'https://localhost:4173', 'http://127.0.0.1:5500'],
-            credentials: true,
+            origin: [FRONTEND_URL!, 'http://localhost:5173', 'http://localhost:4173', 'https://localhost:5173', 'https://localhost:4173', 'http://127.0.0.1:5500']
         }
     });
 
@@ -57,7 +55,7 @@ const setUpSocket = (server: httpServer) => {
                 return next(new Error("Invalid token"));
             }
 
-            const user = await getBaseUser(decodedToken.id);
+            const user = await messageService.getBaseUser(decodedToken.id);
             if (!user) {
                 logger.debug('Invalid user for socket connection');
                 return next(new Error("Invalid user"));

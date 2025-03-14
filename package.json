@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "tsc && node dist/index.js",
-    "build": "tsc && cp .env dist/. && cp package.json package-lock.json dist/. && cp src/assets dist/ -r && cd dist && npm install",
+    "build": "tsc && cp .env dist/. && cp package.json package-lock.json dist/. && cd dist && npm install",
     "migrate": "npx sequelize-cli db:migrate --env=production",
     "create": "npx sequelize-cli db:create --env=production",
     "drop": "npx sequelize-cli db:drop --env=production",

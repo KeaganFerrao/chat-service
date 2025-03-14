@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { MONGO_URI } from './secrets';
 import logger from './logger';
 
-const connectDB = async () => {
+export const connectDB = async () => {
     try {
         await mongoose.connect(MONGO_URI!);
         logger.debug('MongoDB Connected');
@@ -11,5 +11,3 @@ const connectDB = async () => {
         logger.error(error);
     }
 };
-
-connectDB();

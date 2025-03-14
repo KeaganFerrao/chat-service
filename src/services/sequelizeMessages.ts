@@ -46,7 +46,7 @@ export class SequelizeMessageService implements MessageService {
 
     listUsers = async (userId: string, limit: number, offset: number, search: string | undefined) => {
         const users = await baseUser.findAndCountAll({
-            attributes: ['id', 'firstName', 'lastName', 'type'],
+            attributes: ['id', 'firstName', 'lastName', 'role'],
             where: {
                 isDeleted: false,
                 id: {

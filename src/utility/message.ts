@@ -98,9 +98,9 @@ const validateAckMessagePayload = (payload: Record<string, any>): { message: str
         }
     }
 
-    if (!messageId || typeof messageId !== 'number') {
+    if (!messageId || typeof messageId !== 'string') {
         return {
-            message: 'Message ID is required and should be a number',
+            message: 'Message ID is required and should be a string',
             success: false
         }
     }
@@ -174,9 +174,9 @@ const validateUserListPayload = (payload: Record<string, any>): { message: strin
 const validateReachUserPayload = (payload: Record<string, any>): { message: string, success: boolean } => {
     const userId = payload.userId;
 
-    if (!userId || typeof userId !== 'number') {
+    if (!userId || typeof userId !== 'string') {
         return {
-            message: 'User ID is required and should be a number',
+            message: 'User ID is required and should be a string',
             success: false
         }
     }
@@ -257,9 +257,9 @@ const validateNotificationMessagesPayload = (payload: Record<string, any>): { me
 const validateAckNotificationPayload = (payload: Record<string, any>): { message: string, success: boolean } => {
     const { notificationId } = payload;
 
-    if (!notificationId || typeof notificationId !== 'number') {
+    if (!notificationId || typeof notificationId !== 'string') {
         return {
-            message: 'Notification ID is required and should be a number',
+            message: 'Notification ID is required and should be a string',
             success: false
         }
     }

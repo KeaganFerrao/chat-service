@@ -6,12 +6,15 @@ import { PORT } from "./setup/secrets";
 import { createServer } from 'http';
 import router from './routes'
 import setUpSocket from './setup/socket';
+import { connectDB } from '@setup/mongo';
 
 const server = createServer(app);
 
 app.use('/api/v1', router);
 app.use(errorHandler);
 app.use(notFoundHandler);
+
+connectDB();
 
 export const io = setUpSocket(server);
 

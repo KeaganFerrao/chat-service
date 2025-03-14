@@ -33,7 +33,8 @@ const baseUserSchema = new mongoose.Schema({
     }
 }, {
     collection: 'baseUsers',
-    timestamps: false
+    timestamps: false,
+    _id: false
 });
 
 const BaseUser = mongoose.model('BaseUser', baseUserSchema);

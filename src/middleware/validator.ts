@@ -1,7 +1,5 @@
-import logger from "@setup/logger";
-import { WithTransaction } from "@type/utility";
 import { sendResponse } from "@utility/api";
-import { NextFunction, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { body, param, validationResult } from "express-validator";
 import path from "path";
 
@@ -50,7 +48,7 @@ const UploadAttachmentsValidationRules = () => {
     ]
 }
 
-const ValidateReqParams = async (req: WithTransaction, res: Response, next: NextFunction) => {
+const ValidateReqParams = async (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (errors.isEmpty()) {
         return next();
@@ -61,12 +59,6 @@ const ValidateReqParams = async (req: WithTransaction, res: Response, next: Next
             extractedErrors.push({ [err.path]: err.msg })
         }
     })
-
-    const transaction = req.transaction;
-    if (transaction) {
-        logger.debug('Rolling back transaction');
-        await transaction.rollback();
-    }
 
     sendResponse(res, 422, 'Invalid or missing parameters', [], extractedErrors);
 }

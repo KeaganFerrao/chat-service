@@ -26,7 +26,7 @@ interface MessageService {
     listMessages(channelId: string, limit: number, offset: number): Promise<{ rows: MessageAttributes[]; count: number }>;
     listNotifications(baseUserId: string, type: string, limit: number, offset: number): Promise<{ rows: NotificationsAttributes[]; count: number }>;
     getNotificationUnreadCount(baseUserId: string, type: string): Promise<number>;
-    getAttachmentById(attachmentId: string, baseUserId: string, transaction: Transaction | ClientSession): Promise<AttachmentsCreationAttributes | null>;
+    getAttachmentById(attachmentId: string, baseUserId: string, transaction?: Transaction | ClientSession): Promise<AttachmentsCreationAttributes | null>;
     updateAttachmentUploadSuccess(attachmentIds: string[], transaction: Transaction | ClientSession): Promise<void>;
     updateAttachmentUploadFailure(attachmentIds: string[], transaction: Transaction | ClientSession): Promise<void>;
 }
