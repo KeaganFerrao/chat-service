@@ -5,7 +5,6 @@ import s3Client from "../setup/storage";
 import { DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { ReadStream } from "fs";
-import logger from "../setup/logger";
 
 const uploadToBucket = async (file: Buffer, name: string, contentType: string) => {
     const s3Stream = new PassThrough();
@@ -23,9 +22,9 @@ const uploadToBucket = async (file: Buffer, name: string, contentType: string) =
     });
 
     const timerId = setTimeout(async () => {
-        logger.error(`Upload to S3 timed out after ${S3_UPLOAD_TIMEOUT_MS} ms. Aborting upload.`);
+        console.error(`Upload to S3 timed out after ${S3_UPLOAD_TIMEOUT_MS} ms. Aborting upload.`);
         await upload.abort();
-        logger.error(`Upload aborted.`);
+        console.error(`Upload aborted.`);
     }, S3_UPLOAD_TIMEOUT_MS ? Number(S3_UPLOAD_TIMEOUT_MS) : 60000);
 
     const uploadedFile = await upload.done();

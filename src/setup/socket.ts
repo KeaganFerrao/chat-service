@@ -1,7 +1,7 @@
 import { Server as httpServer } from "http";
 import { Server } from "socket.io";
 import { DB_TYPE, FRONTEND_URL } from "./secrets";
-import logger from "./logger";
+import { FileLogger } from "./logger";
 import { JwtPayload } from "jsonwebtoken";
 import { decodeToken } from "@utility/auth";
 import { SocketController } from "@controllers/socket";
@@ -20,8 +20,9 @@ if (DB_TYPE == 'mongo') {
     messageService = new SequelizeMessageService();
     transactionManager = new SequelizeTransactionManager();
 }
+const logger = FileLogger.getInstance();
 
-const socketController = new SocketController(messageService, transactionManager);
+const socketController = new SocketController(messageService, transactionManager, logger);
 
 const setUpSocket = (server: httpServer) => {
     const io = new Server(server, {

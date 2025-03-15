@@ -28,7 +28,8 @@ const messageSchema = new mongoose.Schema({
     }
 }, {
     collection: 'messages',
-    timestamps: false
+    timestamps: false,
+    _id: false
 });
 
 const Message = mongoose.model('Message', messageSchema);

@@ -27,7 +27,8 @@ const userChannelSchema = new mongoose.Schema({
     }
 }, {
     collection: 'userChannels',
-    timestamps: false
+    timestamps: false,
+    _id: false
 });
 
 const UserChannel = mongoose.model('UserChannel', userChannelSchema);

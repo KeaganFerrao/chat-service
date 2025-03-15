@@ -33,7 +33,8 @@ const notificationSchema = new mongoose.Schema({
     }
 }, {
     collection: 'notifications',
-    timestamps: false
+    timestamps: false,
+    _id: false
 });
 
 const Notification = mongoose.model('Notification', notificationSchema);

@@ -8,7 +8,6 @@ const app: Application = express();
 app.use(express.json());
 app.use(cors({
     origin: [FRONTEND_URL!, 'http://localhost:5173', 'http://localhost:4173', 'https://localhost:5173', 'https://localhost:4173'],
-    credentials: true,
     allowedHeaders: ['Content-Type'],
     methods: ['GET', 'POST', 'PUT', 'DELETE']
 }));

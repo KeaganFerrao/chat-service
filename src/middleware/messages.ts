@@ -1,4 +1,3 @@
-import logger from "@setup/logger";
 import multer from "@setup/multer";
 import { ProtectedPayload } from "@type/utility";
 import { RequestWithPayload } from "@type/utility";
@@ -6,12 +5,15 @@ import { sendResponse } from "@utility/api";
 import { NextFunction, Request, Response } from "express";
 import { MulterError } from "multer";
 import { MessageService } from "../interfaces/messages";
+import { Logger } from "../interfaces/logger";
 
 export class MessageMiddleware {
     private messageService: MessageService;
+    private logger: Logger;
 
-    constructor(messageService: MessageService) {
+    constructor(messageService: MessageService, logger: Logger) {
         this.messageService = messageService;
+        this.logger = logger;
     }
 
     ValidateMultipleFileUpload = (name: string) => (async (req: Request, res: Response, next: NextFunction) => {
@@ -28,15 +30,15 @@ export class MessageMiddleware {
                             return sendResponse(res, 400, err.code);
                     }
                 } else if (err) {
-                    logger.error(err)
+                    this.logger.error(err)
                     return sendResponse(res, 500, 'Error uploading file');
                 }
 
                 next();
             })
         } catch (error) {
-            logger.error('Error validating multiple file upload');
-            logger.error(error);
+            this.logger.error('Error validating multiple file upload');
+            this.logger.error(error);
             sendResponse(res, 500, 'Internal Server Error');
         }
     })
@@ -62,8 +64,8 @@ export class MessageMiddleware {
 
             next();
         } catch (error) {
-            logger.error('Error validating attachment upload');
-            logger.error(error);
+            this.logger.error('Error validating attachment upload');
+            this.logger.error(error);
             sendResponse(res, 500, 'Internal Server Error');
         }
     }

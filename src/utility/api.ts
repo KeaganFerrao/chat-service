@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from "express";
-import logger from "../setup/logger";
 import { ServerResponse } from "../types/utility";
 import { randomInt } from "crypto";
 
@@ -22,11 +21,6 @@ export const sendResponse = (res: Response, statusCode: number, message: string,
     response.errors = errors;
 
     res.status(statusCode).json(response);
-}
-
-export const requestLogger = (req: Request, res: Response, next: NextFunction): void => {
-    logger.debug(`Request: ${req.method} ${req.originalUrl}`);
-    next();
 }
 
 export const ucFirstChar = (str: string) => {

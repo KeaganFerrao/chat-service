@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "tsc && node dist/index.js",
-    "build": "tsc && cp .env dist/. && cp package.json package-lock.json dist/. && cd dist && npm install",
+    "build": "tsc && cp package.json package-lock.json dist/. && cd dist && npm install",
     "migrate": "npx sequelize-cli db:migrate --env=production",
     "create": "npx sequelize-cli db:create --env=production",
     "drop": "npx sequelize-cli db:drop --env=production",
@@ -49,6 +49,7 @@
     "multer": "^1.4.5-lts.1",
     "pg": "^8.11.3",
     "sequelize": "^6.33.0",
+    "sequelize-cli": "^6.6.2",
     "socket.io": "^4.7.5",
     "uuid": "^11.1.0",
     "winston": "^3.13.0",

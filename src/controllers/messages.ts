@@ -1,16 +1,18 @@
-import logger from "@setup/logger";
 import { sendResponse } from "@utility/api";
 import { uploadToBucket } from "@utility/storage";
 import { NextFunction, Request, Response } from "express"
 import { MessageService, TransactionManager } from "../interfaces/messages";
+import { Logger } from "../interfaces/logger";
 
 export class MessageContoller {
     private messageService: MessageService;
     private transactionManager: TransactionManager;
+    private logger: Logger;
 
-    constructor(service: MessageService, transactionManager: TransactionManager) {
+    constructor(service: MessageService, transactionManager: TransactionManager, logger: Logger) {
         this.messageService = service;
         this.transactionManager = transactionManager;
+        this.logger = logger;
     }
 
     UploadAttachment = async (req: Request, res: Response, next: NextFunction) => {
@@ -44,8 +46,8 @@ export class MessageContoller {
 
             sendResponse(res, 200, 'Attachment files processed successfully', { successIds, failedIds });
         } catch (error) {
-            logger.error('Error uploading attachments');
-            logger.error(error);
+            this.logger.error('Error uploading attachments');
+            this.logger.error(error);
             await this.transactionManager.rollbackTransaction(transaction);
             next(error);
         }

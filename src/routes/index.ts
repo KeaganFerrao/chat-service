@@ -10,6 +10,7 @@ import { Router } from "express";
 import { MessageService, TransactionManager } from "../interfaces/messages";
 import { MongoMessageService } from "../services/mongoMessages";
 import { SequelizeMessageService } from "../services/sequelizeMessages";
+import { FileLogger } from "@setup/logger";
 
 let messageService: MessageService;
 let transactionManager: TransactionManager;
@@ -21,9 +22,11 @@ if (DB_TYPE == 'mongo') {
     transactionManager = new SequelizeTransactionManager();
 }
 
-const authMiddleware = new AuthMiddleware(messageService);
-const messageMiddleware = new MessageMiddleware(messageService);
-const messageController = new MessageContoller(messageService, transactionManager);
+const fileLogger = FileLogger.getInstance();
+
+const authMiddleware = new AuthMiddleware(messageService, fileLogger);
+const messageMiddleware = new MessageMiddleware(messageService, fileLogger);
+const messageController = new MessageContoller(messageService, transactionManager, fileLogger);
 
 const router = Router();
 

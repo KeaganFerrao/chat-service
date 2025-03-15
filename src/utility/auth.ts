@@ -2,7 +2,7 @@ import { JwtPayload, sign, verify } from 'jsonwebtoken';
 import { JWT_SECRET } from '../setup/secrets';
 import { randomBytes } from 'crypto';
 
-const generateJWTToken = (userId: number, email: string, claim: 'admin' | 'staff' | 'doctor' | 'patient', sessionId?: string | null) => {
+const generateJWTToken = (userId: number, email: string, claim: 'admin' | 'user', sessionId?: string | null) => {
     const data = {
         id: userId,
         email: email,

@@ -1,17 +1,19 @@
 import { MessageService, TransactionManager } from "../interfaces/messages";
-import logger from "@setup/logger";
 import { Socket } from "socket.io"
 import { AttachmentsCreationAttributes, AttachmentsInstance } from '../models/postgres/attachments';
 import { getObjectUrl } from "@utility/storage";
 import { validateAckMessagePayload, validateAckNotificationPayload, validateChannelListPayload, validateDownloadAttachmentPayload, validateListMessagesPayload, validateNotificationMessagesPayload, validateReachUserPayload, validateSendMessagePayload, validateUserListPayload } from "@utility/message";
+import { Logger } from "../interfaces/logger";
 
 export class SocketController {
     private messageService: MessageService;
     private transactionManager: TransactionManager;
+    private logger: Logger;
 
-    constructor(service: MessageService, transactionManager: TransactionManager) {
+    constructor(service: MessageService, transactionManager: TransactionManager, logger: Logger) {
         this.messageService = service;
         this.transactionManager = transactionManager;
+        this.logger = logger;
     }
 
     ReachUser = (socket: Socket) => async (payload: { userId: string }, callback: any) => {
@@ -90,8 +92,8 @@ export class SocketController {
                 errors: []
             });
         } catch (error) {
-            logger.error('Error creating channel');
-            logger.error(error);
+            this.logger.error('Error creating channel');
+            this.logger.error(error);
             await this.transactionManager.rollbackTransaction(transaction);
 
             return callback({
@@ -133,8 +135,8 @@ export class SocketController {
                 errors: []
             });
         } catch (error) {
-            logger.error('Error listing users');
-            logger.error(error);
+            this.logger.error('Error listing users');
+            this.logger.error(error);
 
             return callback({
                 success: false,
@@ -166,7 +168,7 @@ export class SocketController {
 
             const offset = Number(size) * (Number(page) - 1);
 
-            logger.debug(`Listing channels for user ${userId}`);
+            this.logger.debug(`Listing channels for user ${userId}`);
             const list = await this.messageService.listUserChannels(userId, size, offset, search);
 
             return callback({
@@ -176,8 +178,8 @@ export class SocketController {
                 errors: []
             });
         } catch (error) {
-            logger.error('Error listing channels');
-            logger.error(error);
+            this.logger.error('Error listing channels');
+            this.logger.error(error);
 
             return callback({
                 success: false,
@@ -224,22 +226,22 @@ export class SocketController {
 
             let attachmentData: AttachmentsCreationAttributes[] = [];
             if (attachments.length > 0) {
-                logger.debug(`Creating attachments for channel ${channelId}, from user ${fromUserId}`);
+                this.logger.debug(`Creating attachments for channel ${channelId}, from user ${fromUserId}`);
                 attachmentData = await this.messageService.createAttachment(fromUserId, channelId, attachments, transaction);
             }
 
             const formattedAttachments = attachmentData.map(attachment => ({ id: attachment.id!, fileName: attachment.fileName }));
-            logger.debug(`Creating message for channel ${channelId}, from user ${fromUserId}`);
-            logger.debug(`Message content: ${content}`);
-            logger.debug(`Message attachments: ${JSON.stringify(formattedAttachments)}`);
+            this.logger.debug(`Creating message for channel ${channelId}, from user ${fromUserId}`);
+            this.logger.debug(`Message content: ${content}`);
+            this.logger.debug(`Message attachments: ${JSON.stringify(formattedAttachments)}`);
 
             const message = await this.messageService.createMessage(fromUserId, channelId, content, formattedAttachments, transaction);
             await this.messageService.updateMessageOffset(fromUserId, channelId, transaction);
 
-            logger.debug(`Getting users in channel ${channelId}`);
+            this.logger.debug(`Getting users in channel ${channelId}`);
             const usersInChannel = await this.messageService.getUsersInChannel(channelId, fromUserId, transaction);
 
-            logger.debug(`Sending message to users in channel ${channelId}`);
+            this.logger.debug(`Sending message to users in channel ${channelId}`);
             usersInChannel.forEach(user => {
                 socket
                     .to(`user:${user.baseUserId}`)
@@ -270,8 +272,8 @@ export class SocketController {
                 errors: []
             });
         } catch (error) {
-            logger.error('Error sending message');
-            logger.error(error);
+            this.logger.error('Error sending message');
+            this.logger.error(error);
             await this.transactionManager.rollbackTransaction(transaction);
 
             return callback({
@@ -360,8 +362,8 @@ export class SocketController {
                 errors: []
             });
         } catch (error) {
-            logger.error('Error fetching attachment');
-            logger.error(error);
+            this.logger.error('Error fetching attachment');
+            this.logger.error(error);
 
             return callback({
                 success: false,
@@ -391,7 +393,7 @@ export class SocketController {
                 });
             }
 
-            logger.debug(`Acknowledging message ${messageId} in channel ${channelId} for user ${baseUserId}`);
+            this.logger.debug(`Acknowledging message ${messageId} in channel ${channelId} for user ${baseUserId}`);
             await this.messageService.ackMessage(baseUserId, channelId);
 
             return callback({
@@ -401,8 +403,8 @@ export class SocketController {
                 errors: []
             });
         } catch (error) {
-            logger.error('Error acknowledging message');
-            logger.error(error);
+            this.logger.error('Error acknowledging message');
+            this.logger.error(error);
 
             return callback({
                 success: false,
@@ -452,8 +454,8 @@ export class SocketController {
                 errors: []
             });
         } catch (error) {
-            logger.error('Error listing messages');
-            logger.error(error);
+            this.logger.error('Error listing messages');
+            this.logger.error(error);
 
             return callback({
                 success: false,
@@ -493,8 +495,8 @@ export class SocketController {
                 errors: []
             });
         } catch (error) {
-            logger.error('Error listing notifications');
-            logger.error(error);
+            this.logger.error('Error listing notifications');
+            this.logger.error(error);
 
             return callback({
                 success: false,
@@ -521,8 +523,8 @@ export class SocketController {
                 errors: []
             });
         } catch (error) {
-            logger.error('Error listing notifications unread count');
-            logger.error(error);
+            this.logger.error('Error listing notifications unread count');
+            this.logger.error(error);
 
             return callback({
                 success: false,
@@ -552,7 +554,7 @@ export class SocketController {
                 });
             }
 
-            logger.debug(`Acknowledging notification ${notificationId} for user ${baseUserId}`);
+            this.logger.debug(`Acknowledging notification ${notificationId} for user ${baseUserId}`);
             await this.messageService.ackNotification(baseUserId);
 
             return callback({
@@ -562,8 +564,8 @@ export class SocketController {
                 errors: []
             });
         } catch (error) {
-            logger.error('Error acknowledging notification');
-            logger.error(error);
+            this.logger.error('Error acknowledging notification');
+            this.logger.error(error);
 
             return callback({
                 success: false,

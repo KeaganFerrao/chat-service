@@ -16,7 +16,8 @@ const userNotificationSchema = new mongoose.Schema({
     }
 }, {
     collection: 'userNotifications',
-    timestamps: false
+    timestamps: false,
+    _id: false
 });
 
 const UserNotification = mongoose.model('UserNotification', userNotificationSchema);

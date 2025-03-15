@@ -1,6 +1,8 @@
 import { Sequelize } from "sequelize";
-import logger from "./logger";
 import { DB_ACCQUIRE_TIME, DB_HOST, DB_IDLE_TIME, DB_MAX_CONNECTIONS_POOL, DB_MIN_CONNECTIONS_POOL, DB_NAME, DB_PASSWORD, DB_PORT, DB_USER } from "./secrets"
+import { FileLogger } from "./logger";
+
+const logger = FileLogger.getInstance()
 
 const sequelize = new Sequelize(DB_NAME!, DB_USER!, DB_PASSWORD, {
     host: DB_HOST,

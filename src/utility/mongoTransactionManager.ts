@@ -4,19 +4,19 @@ import { TransactionManager } from "../interfaces/messages";
 export class MongoTransactionManager implements TransactionManager {
     startTransaction = async (): Promise<ClientSession> => {
         const session = await mongoose.startSession();
-        session.startTransaction();
+        await session.startTransaction();
 
         return session;
     }
 
     commitTransaction = async (transaction: ClientSession): Promise<void> => {
         await transaction.commitTransaction();
-        transaction.endSession();
+        await transaction.endSession();
     }
 
     rollbackTransaction = async (transaction: ClientSession): Promise<void> => {
         await transaction.abortTransaction();
-        transaction.endSession();
+        await transaction.endSession();
     }
 
 }

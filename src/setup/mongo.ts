@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import { MONGO_URI } from './secrets';
-import logger from './logger';
+import { FileLogger } from './logger';
+
+const logger = FileLogger.getInstance();
 
 export const connectDB = async () => {
     try {

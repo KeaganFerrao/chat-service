@@ -19,7 +19,8 @@ const channelSchema = new mongoose.Schema({
     }
 }, {
     collection: 'channels', // Explicitly setting the collection name
-    timestamps: false // No createdAt/updatedAt fields
+    timestamps: false, // No createdAt/updatedAt fields
+    _id: false
 });
 
 // Create the model

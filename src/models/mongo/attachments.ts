@@ -35,7 +35,8 @@ const attachmentsSchema = new mongoose.Schema({
     }
 }, {
     collection: 'attachments', // Explicitly setting the collection name
-    timestamps: false // No createdAt/updatedAt fields
+    timestamps: false, // No createdAt/updatedAt fields
+    _id: false
 });
 
 // Create the model
