@@ -1,18 +1,20 @@
 import { sendResponse } from "@utility/api";
-import { uploadToBucket } from "@utility/storage";
 import { NextFunction, Request, Response } from "express"
 import { MessageService, TransactionManager } from "../interfaces/messages";
 import { Logger } from "../interfaces/logger";
+import { FileSystemUtils } from "../interfaces/filesystem";
 
 export class MessageContoller {
     private messageService: MessageService;
     private transactionManager: TransactionManager;
     private logger: Logger;
+    private fileSystemUtils: FileSystemUtils;
 
-    constructor(service: MessageService, transactionManager: TransactionManager, logger: Logger) {
+    constructor(service: MessageService, transactionManager: TransactionManager, fileSystemUtils: FileSystemUtils, logger: Logger) {
         this.messageService = service;
         this.transactionManager = transactionManager;
         this.logger = logger;
+        this.fileSystemUtils = fileSystemUtils;
     }
 
     UploadAttachment = async (req: Request, res: Response, next: NextFunction) => {
@@ -23,7 +25,7 @@ export class MessageContoller {
 
             const uploadStatus = await Promise.all<{ id: string, success: boolean }>((files as Express.Multer.File[]).map(async (file, index) => {
                 try {
-                    await uploadToBucket(file.buffer, `attachments/${files.length == 1 ? ids : ids[index]}`, file.mimetype);
+                    await this.fileSystemUtils.upload(file.buffer, `attachments/${files.length == 1 ? ids : ids[index]}`, file.mimetype);
                     return {
                         id: files.length == 1 ? ids : ids[index],
                         success: true

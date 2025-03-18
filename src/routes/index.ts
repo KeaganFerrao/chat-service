@@ -11,6 +11,7 @@ import { MessageService, TransactionManager } from "../interfaces/messages";
 import { MongoMessageService } from "../services/mongoMessages";
 import { SequelizeMessageService } from "../services/sequelizeMessages";
 import { FileLogger } from "@setup/logger";
+import { AwsS3FileSystemUtils } from "@utility/s3";
 
 let messageService: MessageService;
 let transactionManager: TransactionManager;
@@ -23,10 +24,11 @@ if (DB_TYPE == 'mongo') {
 }
 
 const fileLogger = FileLogger.getInstance();
+const fileSystemUtils = new AwsS3FileSystemUtils();
 
 const authMiddleware = new AuthMiddleware(messageService, fileLogger);
 const messageMiddleware = new MessageMiddleware(messageService, fileLogger);
-const messageController = new MessageContoller(messageService, transactionManager, fileLogger);
+const messageController = new MessageContoller(messageService, transactionManager, fileSystemUtils, fileLogger);
 
 const router = Router();
 

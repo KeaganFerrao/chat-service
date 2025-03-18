@@ -10,6 +10,7 @@ import { MongoMessageService } from "../services/mongoMessages";
 import { SequelizeMessageService } from "../services/sequelizeMessages";
 import { MongoTransactionManager } from "@utility/mongoTransactionManager";
 import { SequelizeTransactionManager } from "@utility/sequelizeTransactionManager";
+import { AwsS3FileSystemUtils } from "@utility/s3";
 
 let messageService: MessageService;
 let transactionManager: TransactionManager;
@@ -20,9 +21,11 @@ if (DB_TYPE == 'mongo') {
     messageService = new SequelizeMessageService();
     transactionManager = new SequelizeTransactionManager();
 }
-const logger = FileLogger.getInstance();
 
-const socketController = new SocketController(messageService, transactionManager, logger);
+const logger = FileLogger.getInstance();
+const fileSystemUtils = new AwsS3FileSystemUtils();
+
+const socketController = new SocketController(messageService, transactionManager, fileSystemUtils, logger);
 
 const setUpSocket = (server: httpServer) => {
     const io = new Server(server, {

@@ -1,19 +1,21 @@
 import { MessageService, TransactionManager } from "../interfaces/messages";
 import { Socket } from "socket.io"
 import { AttachmentsCreationAttributes, AttachmentsInstance } from '../models/postgres/attachments';
-import { getObjectUrl } from "@utility/storage";
 import { validateAckMessagePayload, validateAckNotificationPayload, validateChannelListPayload, validateDownloadAttachmentPayload, validateListMessagesPayload, validateNotificationMessagesPayload, validateReachUserPayload, validateSendMessagePayload, validateUserListPayload } from "@utility/message";
 import { Logger } from "../interfaces/logger";
+import { FileSystemUtils } from "../interfaces/filesystem";
 
 export class SocketController {
     private messageService: MessageService;
     private transactionManager: TransactionManager;
     private logger: Logger;
+    private fileSystemUtils: FileSystemUtils;
 
-    constructor(service: MessageService, transactionManager: TransactionManager, logger: Logger) {
+    constructor(service: MessageService, transactionManager: TransactionManager, fileSystemUtils: FileSystemUtils, logger: Logger) {
         this.messageService = service;
         this.transactionManager = transactionManager;
         this.logger = logger;
+        this.fileSystemUtils = fileSystemUtils;
     }
 
     ReachUser = (socket: Socket) => async (payload: { userId: string }, callback: any) => {
@@ -351,7 +353,7 @@ export class SocketController {
                 })
             }
 
-            const url = await getObjectUrl(`attachments/${attachmentId}`, 5 * 60);
+            const url = await this.fileSystemUtils.generateUrl(`attachments/${attachmentId}`, 5 * 60);
             return callback({
                 success: true,
                 data: {

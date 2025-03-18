@@ -1,6 +1,5 @@
 import { JwtPayload, sign, verify } from 'jsonwebtoken';
 import { JWT_SECRET } from '../setup/secrets';
-import { randomBytes } from 'crypto';
 
 const generateJWTToken = (userId: number, email: string, claim: 'admin' | 'user', sessionId?: string | null) => {
     const data = {
@@ -25,17 +24,6 @@ const generateJWTToken = (userId: number, email: string, claim: 'admin' | 'user'
     });
 }
 
-const generateRefreshToken = (size: number) => {
-    return new Promise<string>((resolve, reject) => {
-        randomBytes(size, (err, buf) => {
-            if (err) {
-                reject(err);
-            }
-            resolve(buf.toString('hex'));
-        });
-    });
-}
-
 
 const decodeToken = (token: string) => {
     if (!token) {
@@ -53,6 +41,5 @@ const decodeToken = (token: string) => {
 
 export {
     generateJWTToken,
-    generateRefreshToken,
     decodeToken,
 }
