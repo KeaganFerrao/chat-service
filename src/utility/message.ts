@@ -28,20 +28,22 @@ const validateSendMessagePayload = (payload: Record<string, any>): { message: st
             success: false
         }
     }
-
-    for (const attachment of attachments) {
-        if (typeof attachment !== 'string' || attachment.length > 100) {
-            return {
-                message: 'Attachment should be a string of length less than 100',
-                success: false
+    
+    if(Array.isArray(attachments)) {
+        for (const attachment of attachments) {
+            if (typeof attachment !== 'string' || attachment.length > 100) {
+                return {
+                    message: 'Attachment should be a string of length less than 100',
+                    success: false
+                }
             }
         }
-    }
 
-    if (attachments.length > 5) {
-        return {
-            message: 'Maximum 5 attachments allowed',
-            success: false
+        if (attachments.length > 5) {
+            return {
+                message: 'Maximum 5 attachments allowed',
+                success: false
+            }
         }
     }
 

@@ -21,21 +21,15 @@ Follow these steps to set up the repository:
    ```
    This will compile the TypeScript files into JavaScript and create a dist directory.
 
-4. **Create& Migrate the Database:**
-    Go into the dist diectory and run the following commands.
+4. **Create & Migrate the Database:**
+    Go into the dist diectory and run the following commands. (Only if using PostgeSQL, not needed for MongoDB)
    ```bash
    npm run create
    npm run migrate
    ```
    This will create the database and run the migrations.
 
-5. **Seed the Database if required:**
-   ```bash
-   npm run seed
-   ```
-   This will insert initial data into the database.
-
-6. **Start the Server:**
+5. **Start the Server:**
    ```bash
    npm start
    ```
@@ -43,9 +37,28 @@ Follow these steps to set up the repository:
 
 ---
 
+## Socket events:
+
+1. message:send
+2. message:new
+3. message:list
+4. message:ack
+5. message:attachment:download
+6. user:list
+7. user:reach
+8. channel:list
+9. notification:list
+10. notification:unreadcount
+11. notification:ack
+
+## API's:
+
+1. POST /api/v1/upload-attachment
+
 ## Notes
 
 1. Ensure the .env file is present and has the proper configuration.
+2. Please use this service with PostgreSQL as the database, since the MongoDB implementation is not tested yet.
 
 ## Future work
 
@@ -55,12 +68,10 @@ Follow these steps to set up the repository:
 
 3. Abstract API authentication so that we can support multiple authentication stratergies.
 
-4. Add suport to run the service in multiple nodejs clusters to share websockets connections for load balancing.
+4. Impove folder structure.
 
-5. Impove folder structure.
+5. Add user management APIs.
 
-6. Add user management APIs.
+6. Add tenant management APIs.
 
-7. Add tenant management APIs.
-
-8. Write Unit/integration/e2e tests.
+7. Write Unit/integration/e2e tests.

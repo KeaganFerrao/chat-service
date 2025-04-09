@@ -1,9 +1,6 @@
 import { Server as httpServer } from "http";
 import { Server } from "socket.io";
 import { DB_TYPE, FRONTEND_URL } from "./secrets";
-import { FileLogger } from "./logger";
-import { JwtPayload } from "jsonwebtoken";
-import { decodeToken } from "@utility/auth";
 import { SocketController } from "@controllers/socket";
 import { MessageService, TransactionManager } from "../interfaces/messages";
 import { MongoMessageService } from "../services/mongoMessages";
@@ -11,6 +8,8 @@ import { SequelizeMessageService } from "../services/sequelizeMessages";
 import { MongoTransactionManager } from "@utility/mongoTransactionManager";
 import { SequelizeTransactionManager } from "@utility/sequelizeTransactionManager";
 import { AwsS3FileSystemUtils } from "@utility/s3";
+import { JwtAuthService } from "@utility/auth";
+import { ConsoleLogger } from "./consoleLogger";
 
 let messageService: MessageService;
 let transactionManager: TransactionManager;
@@ -22,15 +21,16 @@ if (DB_TYPE == 'mongo') {
     transactionManager = new SequelizeTransactionManager();
 }
 
-const logger = FileLogger.getInstance();
+const logger = new ConsoleLogger();
 const fileSystemUtils = new AwsS3FileSystemUtils();
+const authService = new JwtAuthService();
 
 const socketController = new SocketController(messageService, transactionManager, fileSystemUtils, logger);
 
 const setUpSocket = (server: httpServer) => {
     const io = new Server(server, {
         cors: {
-            origin: [FRONTEND_URL!, 'http://localhost:5173', 'http://localhost:4173', 'https://localhost:5173', 'https://localhost:4173', 'http://127.0.0.1:5500']
+            origin: [FRONTEND_URL!, 'http://localhost:3000', 'http://localhost:4173', 'https://localhost:5173', 'https://localhost:4173', 'http://127.0.0.1:5500']
         }
     });
 
@@ -39,27 +39,22 @@ const setUpSocket = (server: httpServer) => {
             logger.debug('Validating incoming socket connection');
 
             const headers = socket.handshake.headers;
-            const bearerToken = headers?.authorization;
-            if (!bearerToken) {
-                logger.debug('Missing token in socket cookie');
-                return next(new Error("Missing token"));
-            }
 
-            const token = bearerToken?.split(' ')?.[1];
+            const token = authService.extractToken(headers);
             if (!token) {
-                logger.debug('Missing token in socket cookie');
+                logger.debug('Missing token in socket');
                 return next(new Error("Missing token"));
             }
 
-            let decodedToken: JwtPayload;
+            let decodedToken: Record<string, any>;
             try {
-                decodedToken = await decodeToken(token);
+                decodedToken = await authService.verifyToken(token);
             } catch (error) {
-                logger.debug('Invalid token in socket cookie');
+                logger.debug('Invalid token in socket');
                 return next(new Error("Invalid token"));
             }
 
-            const user = await messageService.getBaseUser(decodedToken.id);
+            const user = await messageService.getBaseUser(decodedToken.payload.id);
             if (!user) {
                 logger.debug('Invalid user for socket connection');
                 return next(new Error("Invalid user"));

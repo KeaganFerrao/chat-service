@@ -1,16 +1,17 @@
 import { sendResponse } from "@utility/api";
-import { decodeToken } from "@utility/auth";
 import { NextFunction, Request, Response } from "express";
-import { JwtPayload } from "jsonwebtoken";
 import { MessageService } from "../interfaces/messages";
 import { Logger } from "../interfaces/logger";
+import { AuthService } from "../interfaces/auth";
 
 export class AuthMiddleware {
     private messageService: MessageService;
     private logger: Logger;
+    private authService: AuthService;
 
-    constructor(messageService: MessageService, logger: Logger) {
+    constructor(messageService: MessageService, authService: AuthService ,logger: Logger) {
         this.messageService = messageService;
+        this.authService = authService;
         this.logger = logger;
     }
 
@@ -18,26 +19,20 @@ export class AuthMiddleware {
         try {
             this.logger.debug('Validating Admin token');
 
-            const bearerToken = req.headers?.authorization;
-            if (!bearerToken) {
-                return sendResponse(res, 401, 'Missing Authorization Header');
-            }
-
-            const token = bearerToken?.split(' ')?.[1];
+            const token = this.authService.extractToken(req.headers);
             if (!token) {
-                this.logger.debug('Missing token in cookie');
-                return sendResponse(res, 401, 'Missing Session Token');
+                return sendResponse(res, 401, 'Missing token');
             }
 
-            let decodedToken: JwtPayload;
+            let decodedToken: Record<string, any>;
             try {
-                decodedToken = await decodeToken(token);
+                decodedToken = await this.authService.verifyToken(token);
             } catch (error) {
                 this.logger.debug('Invalid token');
                 return sendResponse(res, 401, 'Invalid token');
             }
 
-            const user = await this.messageService.getBaseUser(decodedToken.id);
+            const user = await this.messageService.getBaseUser(decodedToken.payload.id);
             if (!user) {
                 this.logger.debug('Invalid user');
                 return sendResponse(res, 403, 'Invalid user');

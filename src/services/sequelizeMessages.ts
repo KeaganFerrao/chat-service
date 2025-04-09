@@ -225,7 +225,7 @@ export class SequelizeMessageService implements MessageService {
         const unreadMessageCount = await message.count({
             where: {
                 channelId,
-                id: {
+                sentOn: {
                     [Op.gt]: data?.messageOffset
                 }
             }
@@ -316,7 +316,7 @@ export class SequelizeMessageService implements MessageService {
         return list;
     }
 
-    getNotificationUnreadCount = async (baseUserId: string, type: 'admin' | 'staff' | 'doctor' | 'patient') => {
+    getNotificationUnreadCount = async (baseUserId: string, type: 'admin' | 'user') => {
         const data = await userNotification.findOne({
             attributes: ['notificationOffset'],
             where: {
@@ -326,8 +326,8 @@ export class SequelizeMessageService implements MessageService {
 
         const unreadNotificationCount = await notifications.count({
             where: {
-                id: {
-                    [Op.gt]: data?.notificationOffset ?? 0
+                sentOn: {
+                    [Op.gt]: data?.notificationOffset
                 },
                 [Op.or]: [
                     {

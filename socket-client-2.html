@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket client</title>
+</head>
+
+<body>
+    Welcome to the socket client
+    <input id="message-box" type="text">
+    <button id="message-button">Click to send message</button>
+
+    <button id="reach-user">Reach user</button>
+    <button id="list-user">List Users</button>
+    <button id="message-list">Message List</button>
+    <button id="list-channels">List channels</button>
+    <button id="download">Download attachment</button>
+    <button id="ack-message">Ack message</button>
+
+    <button id="notification-list">Notification List</button>
+    <button id="ack-notification">Ack Notification</button>
+
+    <button id="notification-unread-count">Notification unread count</button>
+
+    <div id="logger" style="padding: 10px; height: 500px; width: 100%; border: 1px solid; overflow: auto;"></div>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+        const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjhlMWY2MjY4LWU5YTktNGRlOC1iMGU4LTQ3ZTY5MDMzODA0YSIsImlhdCI6MTc0MzkzMDM5NSwiZXhwIjoxNzQ0MTAzMTk1fQ.Gvde5I4GL-60BAzx2gPyORvQ47q2CdQIAqu4Gu1DgcM'
+        
+        const logger = (message) => {
+            console.log(message);
+
+            const p = document.createElement('p');
+            p.textContent = message;
+
+            document.getElementById("logger").appendChild(p);
+        }
+
+        var socket = io("http://localhost:3006", {
+            transportOptions: {
+                polling: {
+                    extraHeaders: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            }
+        });
+
+        const channelId = '83fae2c3-09f8-4b7e-b651-9569cb15e5ad';
+        const userToReach = '90d5ed47-a9c2-47b7-bcbb-660c3ce9b0d5';
+
+        socket.on("connect", () => {
+            logger("Connected to server");
+        });
+
+        socket.on("disconnect", () => {
+            logger("Disconnected from server");
+        });
+
+        socket.on("message:new", (data) => {
+            logger("Message received")
+            logger(JSON.stringify(data))
+        });
+
+        socket.on("notification:new", (data) => {
+            logger("Notification received")
+            logger(JSON.stringify(data))
+        });
+
+        document.getElementById("message-button").addEventListener("click", (e) => {
+            let message = document.getElementById("message-box").value;
+            socket.emit("message:send", {
+                channelId,
+                content: message,
+                attachments: ['file1new', 'file2new']
+            }, (data) => {
+                logger("Message  sent")
+                logger(JSON.stringify(data))
+            });
+        });
+
+        document.getElementById("reach-user").addEventListener("click", () => {
+            socket.emit("user:reach", {
+                userId: userToReach
+            }, (data) => {
+                logger("Reached User")
+                logger(JSON.stringify(data));
+            });
+        });
+
+        document.getElementById("list-channels").addEventListener("click", () => {
+            socket.emit("channel:list", {
+                page: 1,
+                size: 10
+            }, (data) => {
+                logger("List of channels")
+                logger(JSON.stringify(data));
+            });
+        });
+
+        document.getElementById("message-list").addEventListener("click", () => {
+            socket.emit("message:list", {
+                channelId,
+                page: 1,
+                size: 10
+            }, (data) => {
+                logger("List of messages")
+                logger(JSON.stringify(data));
+            });
+        });
+
+        document.getElementById("ack-message").addEventListener("click", () => {
+            socket.emit("message:ack", {
+                messageId: '982c625d-11df-4b0d-ab9b-f827bcca43fe',
+                channelId,
+            }, (data) => {
+                logger("Message ack")
+                logger(JSON.stringify(data))
+            });
+        });
+
+        document.getElementById("list-user").addEventListener("click", () => {
+            socket.emit("user:list", {
+                page: 1,
+                size: 10
+            }, (data) => {
+                logger("List of users")
+                logger(JSON.stringify(data))
+            });
+        });
+
+        document.getElementById("download").addEventListener("click", () => {
+            socket.emit("message:attachment:download", {
+                attachmentId: '65d8c2ba-829b-49ff-9b6f-bf24b19b9ddb',
+                channelId
+            }, (data) => {
+                logger("Download attachment")
+                logger(JSON.stringify(data))
+            });
+        });
+
+        document.getElementById("notification-list").addEventListener("click", () => {
+            socket.emit("notification:list", {
+                page: 1,
+                size: 10
+            }, (data) => {
+                logger("List of notifications")
+                logger(JSON.stringify(data))
+            });
+        });
+
+        document.getElementById("ack-notification").addEventListener("click", () => {
+            socket.emit("notification:ack", {
+                notificationId: 2
+            }, (data) => {
+                logger("Notification ack")
+                logger(JSON.stringify(data))
+            });
+        });
+
+        document.getElementById("notification-unread-count").addEventListener("click", () => {
+            socket.emit("notification:unreadcount", {}, (data) => {
+                logger("Notification unread count")
+                logger(JSON.stringify(data))
+            });
+        });
+    </script>
+
+</body>
+
+</html>

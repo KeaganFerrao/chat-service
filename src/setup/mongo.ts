@@ -1,11 +1,15 @@
 import mongoose from 'mongoose';
-import { MONGO_URI } from './secrets';
-import { FileLogger } from './logger';
+import { DB_TYPE, MONGO_URI } from './secrets';
+import { ConsoleLogger } from './consoleLogger';
 
-const logger = FileLogger.getInstance();
+const logger = new ConsoleLogger();
 
-export const connectDB = async () => {
+export const connectMongoDB = async () => {
     try {
+        if (DB_TYPE !== 'mongo') {
+            return;
+        }
+
         await mongoose.connect(MONGO_URI!);
         logger.debug('MongoDB Connected');
     } catch (error) {

@@ -227,7 +227,7 @@ export class SocketController {
             //TODO: Need to add validation to check if user is allowed to send message in channel
 
             let attachmentData: AttachmentsCreationAttributes[] = [];
-            if (attachments.length > 0) {
+            if (attachments && attachments.length > 0) {
                 this.logger.debug(`Creating attachments for channel ${channelId}, from user ${fromUserId}`);
                 attachmentData = await this.messageService.createAttachment(fromUserId, channelId, attachments, transaction);
             }

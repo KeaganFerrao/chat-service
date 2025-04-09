@@ -1,6 +1,8 @@
 import { config } from "dotenv";
+import path from "path";
+
 config({
-    path: '../.env'
+    path: path.resolve(__dirname, '..', '..' ,'.env')
 });
 
 export const {
@@ -23,5 +25,8 @@ export const {
     S3_UPLOAD_TIMEOUT_MS,
     LOG_LEVEL,
     MONGO_URI,
-    DB_TYPE
+    DB_TYPE,
+    REDIS_HOST,
+    REDIS_PORT,
+    REDIS_PASSWORD
 } = process.env;

@@ -1,45 +1,49 @@
 import { JwtPayload, sign, verify } from 'jsonwebtoken';
 import { JWT_SECRET } from '../setup/secrets';
+import { AuthService } from '../interfaces/auth';
+import { IncomingHttpHeaders } from 'http';
 
-const generateJWTToken = (userId: number, email: string, claim: 'admin' | 'user', sessionId?: string | null) => {
-    const data = {
-        id: userId,
-        email: email,
-        claim,
-        sessionId
+export class JwtAuthService implements AuthService {
+    extractToken(headers: IncomingHttpHeaders): string | undefined {
+        const bearerToken = headers?.authorization;
+        const token = bearerToken?.split(' ')?.[1];
+
+        return token;
     }
 
-    return new Promise<string>((resolve, reject) => {
-        sign(data, JWT_SECRET!, {
-            expiresIn: '1d'
-        }, (err, token) => {
-            if (err) {
-                reject(err);
-            }
-            if (token) {
-                resolve(token);
-            }
-            reject('Token generation failed');
+    verifyToken(token: string): Promise<{
+        valid: boolean,
+        payload?: Record<string, any>
+    }> {
+        console.log(token)
+        console.log(JWT_SECRET);
+        return new Promise((resolve, reject) => {
+            verify(token, JWT_SECRET!, (err, decoded) => {
+                if (err) {
+                    reject(err);
+                }
+                resolve({
+                    valid: true,
+                    payload: decoded as JwtPayload
+                });
+            });
         });
-    });
-}
-
-
-const decodeToken = (token: string) => {
-    if (!token) {
-        throw new Error('Missing token');
     }
-    return new Promise<JwtPayload>((resolve, reject) => {
-        verify(token, JWT_SECRET!, (err, decoded) => {
-            if (err) {
-                reject(err);
-            }
-            resolve(decoded as JwtPayload);
-        });
-    });
-}
 
-export {
-    generateJWTToken,
-    decodeToken,
+    generateToken(payload: Record<string, any>): Promise<string> {
+        return new Promise<string>((resolve, reject) => {
+            sign(payload, JWT_SECRET!, {
+                expiresIn: '1d'
+            }, (err, token) => {
+                if (err) {
+                    reject(err);
+                }
+                if (token) {
+                    resolve(token);
+                }
+                reject('Token generation failed');
+            });
+        });
+    }
+
 }
