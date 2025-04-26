@@ -7,6 +7,7 @@
     "dev": "tsc && node dist/index.js",
     "build": "tsc && cp package.json package-lock.json dist/. && cd dist && npm install",
     "migrate": "echo 'Run this command from inside the dist/ directory' && npx sequelize-cli db:migrate --env=production",
+    "seed": "echo 'Run this command from inside the dist/ directory' && npx sequelize-cli db:seed:all --env=production",
     "create": "echo 'Run this command from inside the dist/ directory' && npx sequelize-cli db:create --env=production"
   },
   "engines": {
