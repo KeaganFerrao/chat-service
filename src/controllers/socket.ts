@@ -383,7 +383,7 @@ export class SocketController {
 
         try {
             const { baseUserId } = socket.data.payload;
-            const { channelId, messageId } = payload;
+            const { channelId } = payload;
 
             const validation = validateAckMessagePayload(payload);
             if (!validation.success) {
@@ -395,7 +395,7 @@ export class SocketController {
                 });
             }
 
-            this.logger.debug(`Acknowledging message ${messageId} in channel ${channelId} for user ${baseUserId}`);
+            this.logger.debug(`Acknowledging message in channel ${channelId} for user ${baseUserId}`);
             await this.messageService.ackMessage(baseUserId, channelId);
 
             return callback({

@@ -17,6 +17,4 @@ export type Falsy = null | undefined
 
 export type ProtectedPayload = {
     baseUserId: string;
-    email: string;
-    passwordHash?: string | null;
 }

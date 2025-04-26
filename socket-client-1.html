@@ -28,14 +28,14 @@
 
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
-        const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjkwZDVlZDQ3LWE5YzItNDdiNy1iY2JiLTY2MGMzY2U5YjBkNSIsImlhdCI6MTc0MzkyOTQyMiwiZXhwIjoxNzQ0MTAyMjIyfQ.SOAYXqdSyIxvwKU1imqZPjth3rt0nrEBCOmp629GFt0'
+        const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjkwZDVlZDQ3LWE5YzItNDdiNy1iY2JiLTY2MGMzY2U5YjBkNSIsImlhdCI6MTc0NDk2MTI0MCwiZXhwIjoxNzQ1MDQ3NjQwfQ.MBVFgrSmEdl1mcLT_-NS_PkU3JQoddGecYJNDoj95Us'
         
         const logger = (message) => {
             console.log(message);
 
             const p = document.createElement('p');
             p.textContent = message;
-
+            p.style.whiteSpace = "pre";
             document.getElementById("logger").appendChild(p);
         }
 
@@ -49,8 +49,8 @@
             }
         });
 
-        const channelId = '83fae2c3-09f8-4b7e-b651-9569cb15e5ad';
-        const userToReach = '8e1f6268-e9a9-4de8-b0e8-47e69033804a';
+        const channelId = '954a722f-bb1a-43c6-b3f2-15f78e490fb7';
+        const userToReach = '19170b43-f98c-45f0-97cd-8b1765829858';
 
         socket.on("connect", () => {
             logger("Connected to server");
@@ -62,12 +62,12 @@
 
         socket.on("message:new", (data) => {
             logger("Message received")
-            logger(JSON.stringify(data))
+            logger(JSON.stringify(data, null, 2))
         });
 
         socket.on("notification:new", (data) => {
             logger("Notification received")
-            logger(JSON.stringify(data))
+            logger(JSON.stringify(data, null, 2))
         });
 
         document.getElementById("message-button").addEventListener("click", (e) => {
@@ -78,7 +78,7 @@
                 attachments: ['file1new', 'file2new']
             }, (data) => {
                 logger("Message  sent")
-                logger(JSON.stringify(data))
+                logger(JSON.stringify(data, null, 2))
             });
         });
 
@@ -87,7 +87,7 @@
                 userId: userToReach
             }, (data) => {
                 logger("Reached User")
-                logger(JSON.stringify(data));
+                logger(JSON.stringify(data, null, 2));
             });
         });
 
@@ -97,7 +97,7 @@
                 size: 10
             }, (data) => {
                 logger("List of channels")
-                logger(JSON.stringify(data));
+                logger(JSON.stringify(data, null, 2));
             });
         });
 
@@ -108,17 +108,17 @@
                 size: 10
             }, (data) => {
                 logger("List of messages")
-                logger(JSON.stringify(data));
+                logger(JSON.stringify(data, null, 2));
             });
         });
 
         document.getElementById("ack-message").addEventListener("click", () => {
             socket.emit("message:ack", {
-                messageId: 20,
+                messageId: 'c16cb618-7fe3-4ba2-9636-8e37fd547f9b',
                 channelId,
             }, (data) => {
                 logger("Message ack")
-                logger(JSON.stringify(data))
+                logger(JSON.stringify(data, null, 2))
             });
         });
 
@@ -128,7 +128,7 @@
                 size: 10
             }, (data) => {
                 logger("List of users")
-                logger(JSON.stringify(data))
+                logger(JSON.stringify(data, null, 2))
             });
         });
 
@@ -138,7 +138,7 @@
                 channelId
             }, (data) => {
                 logger("Download attachment")
-                logger(JSON.stringify(data))
+                logger(JSON.stringify(data, null, 2))
             });
         });
 
@@ -148,7 +148,7 @@
                 size: 10
             }, (data) => {
                 logger("List of notifications")
-                logger(JSON.stringify(data))
+                logger(JSON.stringify(data, null, 2))
             });
         });
 
@@ -157,14 +157,14 @@
                 notificationId: 2
             }, (data) => {
                 logger("Notification ack")
-                logger(JSON.stringify(data))
+                logger(JSON.stringify(data, null, 2))
             });
         });
 
         document.getElementById("notification-unread-count").addEventListener("click", () => {
             socket.emit("notification:unreadcount", {}, (data) => {
                 logger("Notification unread count")
-                logger(JSON.stringify(data))
+                logger(JSON.stringify(data, null, 2))
             });
         });
     </script>

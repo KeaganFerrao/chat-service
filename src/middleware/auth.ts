@@ -3,6 +3,7 @@ import { NextFunction, Request, Response } from "express";
 import { MessageService } from "../interfaces/messages";
 import { Logger } from "../interfaces/logger";
 import { AuthService } from "../interfaces/auth";
+import { ProtectedPayload, RequestWithPayload } from "@type/utility";
 
 export class AuthMiddleware {
     private messageService: MessageService;
@@ -15,7 +16,7 @@ export class AuthMiddleware {
         this.logger = logger;
     }
 
-    ValidateToken = async (req: Request, res: Response, next: NextFunction) => {
+    ValidateToken = async (req: RequestWithPayload<ProtectedPayload>, res: Response, next: NextFunction) => {
         try {
             this.logger.debug('Validating Admin token');
 
@@ -36,6 +37,10 @@ export class AuthMiddleware {
             if (!user) {
                 this.logger.debug('Invalid user');
                 return sendResponse(res, 403, 'Invalid user');
+            }
+
+            req.payload = {
+                baseUserId: decodedToken.payload.id
             }
 
             this.logger.debug('Token validated successfully');

@@ -100,13 +100,6 @@ const validateAckMessagePayload = (payload: Record<string, any>): { message: str
         }
     }
 
-    if (!messageId || typeof messageId !== 'string') {
-        return {
-            message: 'Message ID is required and should be a string',
-            success: false
-        }
-    }
-
     return {
         message: 'Validated',
         success: true
